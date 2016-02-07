@@ -2,3 +2,5 @@ name = Drupal.org API
 description = "Drupal.org API connector"
 package = Drupal.org API
 core = 7.x
+
+files[] = drupalorg_api.exception.php
