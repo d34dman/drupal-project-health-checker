@@ -182,7 +182,7 @@ function projecthealth_user_update($pid, $do_uid, $activity_time) {
     projecthealth_user_create($pid, $do_uid, $activity_time);
   }
   else {
-    $latest_activity = $result->latest_activity;
+    $latest_activity = $result['latest_activity'];
     if ($latest_activity < $activity_time) {
       $fields = array(
         'latest_activity' => $activity_time,
