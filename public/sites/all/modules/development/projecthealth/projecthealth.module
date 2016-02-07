@@ -70,17 +70,11 @@ function projecthealth_form_submit($form, $form_state) {
   $project = drupalorg_api_get_project($values['field_project_machine_name']);
   $pid = projecthealth_project_create($sid, $project);
 
-  $page = 0;
-  while (TRUE) {
-    $result = drupalorg_api_get_issues($project, $page);
-    foreach ($result->list as $issue) {
-      projecthealth_issue_create($sid, $pid, $issue);
-    }
-    if (empty($result->next)) {
-      break;
-    }
-    $page++;
-  }
+  $data['sid'] = $sid;
+  $data['pid'] = $pid;
+  $data['project'] = $project;
+
+  projecthealth_snapshot_process_issues($data);
 }
 
 /**
@@ -108,6 +102,53 @@ function projecthealth_cron_queue_info() {
     'time' => 30,
   );
   return $queues;
+}
+
+/**
+ * Given issue node id, process all comments under the node.
+ */
+function projecthealth_snapshot_process_issues($data) {
+  $project = $data['project'];
+  $sid = $data['sid'];
+  $pid = $data['pid'];
+
+  $comment_data = $data;
+
+  $page = 0;
+  while (TRUE) {
+    $result = drupalorg_api_get_issues($project, $page);
+    foreach ($result->list as $issue) {
+      projecthealth_issue_create($sid, $pid, $issue);
+      $comment_data['issue'] = $issue;
+      projecthealth_snapshot_process_comments($comment_data);
+    }
+    if (empty($result->next)) {
+      break;
+    }
+    $page++;
+  }
+}
+
+/**
+ * Given issue node id, process all comments under the node.
+ */
+function projecthealth_snapshot_process_comments($data) {
+  $issue = $data['issue'];
+  $project = $data['project'];
+  $sid = $data['sid'];
+  $pid = $data['pid'];
+
+  $page = 0;
+  while (TRUE) {
+    $result = drupalorg_api_get_comments($issue, $page);
+    foreach ($result->list as $comment) {
+      projecthealth_comment_create($sid, $pid, $issue, $comment);
+    }
+    if (empty($result->next)) {
+      break;
+    }
+    $page++;
+  }
 }
 
 /**
