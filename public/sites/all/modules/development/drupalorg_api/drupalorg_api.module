@@ -11,21 +11,32 @@ define('DRUPALORG_API_URL', 'https://www.drupal.org/api-d7/');
  * Helper function to get data from jira instance.
  */
 function drupalorg_api_call($url) {
-  // Get from cache if available.
-  $response = NULL;
-  try {
-    $ch = curl_init();
-    curl_setopt($ch, CURLOPT_URL, DRUPALORG_API_URL . $url);
-    curl_setopt($ch, CURLOPT_RETURNTRANSFER, 1);
-    curl_setopt($ch, CURLOPT_SSL_VERIFYHOST, 0);
-    curl_setopt($ch, CURLOPT_SSL_VERIFYPEER, FALSE);
-    $response = _drupalorg_api_call_execute($ch);
+  $drupalorg_api_response = &drupal_static(__FUNCTION__);
+  if (!isset($drupalorg_api_response[$url])) {
+    if ($cache = cache_get($url, 'cache_drupalorg_api')) {
+      $drupalorg_api_response[$url] = $cache->data;
+    }
+    else {
+      $drupalorg_api_response[$url] = NULL;
+      // Maintain drupal_static memory of latest 100 calls only.
+      if (count($drupalorg_api_response) > 100) {
+        array_shift($drupalorg_api_response);
+      }
+      try {
+        $ch = curl_init();
+        curl_setopt($ch, CURLOPT_URL, DRUPALORG_API_URL . $url);
+        curl_setopt($ch, CURLOPT_RETURNTRANSFER, 1);
+        curl_setopt($ch, CURLOPT_SSL_VERIFYHOST, 0);
+        curl_setopt($ch, CURLOPT_SSL_VERIFYPEER, FALSE);
+        $drupalorg_api_response[$url] = _drupalorg_api_call_execute($ch);
+        cache_set($url, $drupalorg_api_response[$url], 'cache_drupalorg_api');
+      }
+      catch (DrupalorgApiException $e) {
+        watchdog('drupalorg_api', $e->getMessage(), WATCHDOG_ERROR);
+      }
+    }
   }
-  catch (DrupalorgApiException $e) {
-    watchdog('drupalorg_api', $e->getMessage(), WATCHDOG_ERROR);
-  }
-  // @todo write to cache.
-  return $response;
+  return $drupalorg_api_response[$url];
 }
 
 
