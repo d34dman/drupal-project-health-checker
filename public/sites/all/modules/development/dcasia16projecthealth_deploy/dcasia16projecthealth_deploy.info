@@ -6,3 +6,6 @@ dependencies[] = system (>7.10)
 dependencies[] = menu
 dependencies[] = entityreference
 dependencies[] = field_ui
+
+dependencies[] = projecthealth
+dependencies[] = drupalorg_api
