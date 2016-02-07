@@ -36,6 +36,12 @@ function projecthealth_schema() {
         'not null' => TRUE,
         'default' => 0,
       ),
+      'progress' => array(
+        'description' => 'Progress of snapshot in percentage.',
+        'type' => 'int',
+        'not null' => TRUE,
+        'default' => 0,
+      ),
       'title' => array(
         'description' => 'The title of this snapshot, always treated as non-markup plain text.',
         'type' => 'varchar',

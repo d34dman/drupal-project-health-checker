@@ -77,3 +77,19 @@ function projecthealth_permission() {
     ),
   );
 }
+
+/**
+ * Implements hook_cron_queue_info().
+ */
+function projecthealth_cron_queue_info() {
+  $queues['projecthealth_issues'] = array(
+    'worker callback' => 'projecthealth_snapshot_process_issues',
+    'time' => 30,
+  );
+  $queues['projecthealth_comments'] = array(
+    'worker callback' => 'projecthealth_snapshot_process_comments',
+    'time' => 30,
+  );
+  return $queues;
+}
+
