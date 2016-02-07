@@ -1,0 +1,275 @@
+<?php
+
+/**
+ * @file
+ * Project Health module install file.
+ */
+
+/**
+ * Implements hook_schema().
+ */
+function projecthealth_schema() {
+  $schema['projecthealth_snapshot'] = array(
+    'description' => 'Snapshot of project health.',
+    'fields' => array(
+      'id' => array(
+        'description' => 'The primary identifier for a project health snapshot.',
+        'type' => 'serial',
+        'unsigned' => TRUE,
+        'not null' => TRUE,
+      ),
+      'created' => array(
+        'description' => 'The Unix timestamp when the node was created.',
+        'type' => 'int',
+        'not null' => TRUE,
+        'default' => 0,
+      ),
+      'start' => array(
+        'description' => 'start time for snapshot.',
+        'type' => 'int',
+        'not null' => TRUE,
+        'default' => 0,
+      ),
+      'end' => array(
+        'description' => 'End time for snapshot.',
+        'type' => 'int',
+        'not null' => TRUE,
+        'default' => 0,
+      ),
+      'title' => array(
+        'description' => 'The title of this snapshot, always treated as non-markup plain text.',
+        'type' => 'varchar',
+        'length' => 255,
+        'not null' => TRUE,
+        'default' => '',
+      ),
+    ),
+    'indexes' => array(
+      'projecthealth_snapshot_created' => array('created'),
+    ),
+    'primary key' => array('id'),
+  );
+  $schema['projecthealth_user'] = array(
+    'description' => 'User on Drupal.org',
+    'fields' => array(
+      'uid' => array(
+        'description' => 'The user id who created the project.',
+        'type' => 'int',
+        'not null' => TRUE,
+      ),
+      'created' => array(
+        'description' => 'The Unix timestamp when the user was created on Drupal.org.',
+        'type' => 'int',
+        'not null' => TRUE,
+        'default' => 0,
+      ),
+      'title' => array(
+        'description' => 'username of Drupal.org.',
+        'type' => 'varchar',
+        'length' => 255,
+        'not null' => TRUE,
+        'default' => '',
+      ),
+      'pid' => array(
+        'description' => 'The project id.',
+        'type' => 'int',
+        'not null' => TRUE,
+        'default' => 0,
+      ),
+      'maintainer' => array(
+        'description' => 'Indicate if the user is maintainer of project or not',
+        'type' => 'int',
+        'not null' => TRUE,
+        'default' => 0,
+      ),
+      'latest_activity' => array(
+        'description' => 'latest activity time by the user',
+        'type' => 'int',
+        'not null' => TRUE,
+        'default' => 0,
+      ),
+    ),
+    'indexes' => array(
+      'projecthealth_user_created' => array('created'),
+    ),
+    'primary key' => array('uid'),
+  );
+  $schema['projecthealth_project'] = array(
+    'description' => 'Details about Project against a snapshot',
+    'fields' => array(
+      'id' => array(
+        'description' => 'The primary identifier for a project health snapshot.',
+        'type' => 'serial',
+        'unsigned' => TRUE,
+        'not null' => TRUE,
+      ),
+      'created' => array(
+        'description' => 'The Unix timestamp when the project was created on Drupa.org.',
+        'type' => 'int',
+        'not null' => TRUE,
+        'default' => 0,
+      ),
+      'sid' => array(
+        'description' => 'The snapshot id.',
+        'type' => 'int',
+        'not null' => TRUE,
+        'default' => 0,
+      ),
+      'uid' => array(
+        'description' => 'The user id who created the project.',
+        'type' => 'int',
+        'not null' => TRUE,
+        'default' => 0,
+      ),
+      'sync_time' => array(
+        'description' => 'time when this particular entry was created',
+        'type' => 'int',
+        'not null' => TRUE,
+        'default' => 0,
+      ),
+      'maintenance_status' => array(
+        'description' => 'Maintenance status on project page',
+        'type' => 'int',
+        'not null' => TRUE,
+        'default' => 0,
+      ),
+      'development_status' => array(
+        'description' => 'Development status on project page',
+        'type' => 'int',
+        'not null' => TRUE,
+        'default' => 0,
+      ),
+      'downloads' => array(
+        'description' => 'Total number of downloads',
+        'type' => 'int',
+        'not null' => TRUE,
+        'default' => 0,
+      ),
+    ),
+    'indexes' => array(
+      'projecthealth_project_created' => array('created'),
+    ),
+    'primary key' => array('id'),
+  );
+  $schema['projecthealth_issue'] = array(
+    'description' => 'Details about Issue against a Project snapshot',
+    'fields' => array(
+      'id' => array(
+        'description' => 'The primary identifier for a issue snapshot.',
+        'type' => 'serial',
+        'unsigned' => TRUE,
+        'not null' => TRUE,
+      ),
+      'created' => array(
+        'description' => 'The Unix timestamp when the project was created on Drupa.org.',
+        'type' => 'int',
+        'not null' => TRUE,
+        'default' => 0,
+      ),
+      'sid' => array(
+        'description' => 'The snapshot id.',
+        'type' => 'int',
+        'not null' => TRUE,
+        'default' => 0,
+      ),
+      'pid' => array(
+        'description' => 'The project id.',
+        'type' => 'int',
+        'not null' => TRUE,
+        'default' => 0,
+      ),
+      'uid' => array(
+        'description' => 'The user id who created the project.',
+        'type' => 'int',
+        'not null' => TRUE,
+        'default' => 0,
+      ),
+      'sync_time' => array(
+        'description' => 'time when this particular entry was created',
+        'type' => 'int',
+        'not null' => TRUE,
+        'default' => 0,
+      ),
+      'issue_id' => array(
+        'description' => 'The issue id on Drupal.org.',
+        'type' => 'int',
+        'not null' => TRUE,
+        'default' => 0,
+      ),
+      'priority' => array(
+        'description' => 'Priority set for the issue',
+        'type' => 'int',
+        'not null' => TRUE,
+        'default' => 0,
+      ),
+      'status' => array(
+        'description' => 'Status of the issue',
+        'type' => 'int',
+        'not null' => TRUE,
+        'default' => 0,
+      ),
+      'category' => array(
+        'description' => 'Category of the issue',
+        'type' => 'int',
+        'not null' => TRUE,
+        'default' => 0,
+      ),
+    ),
+    'indexes' => array(
+      'projecthealth_issue_created' => array('created'),
+    ),
+    'primary key' => array('id'),
+  );
+  $schema['projecthealth_comment'] = array(
+    'description' => 'Details about Comment against a Project snapshot',
+    'fields' => array(
+      'id' => array(
+        'description' => 'The primary identifier for a comment snapshot.',
+        'type' => 'serial',
+        'unsigned' => TRUE,
+        'not null' => TRUE,
+      ),
+      'created' => array(
+        'description' => 'The Unix timestamp when the project was created on Drupa.org.',
+        'type' => 'int',
+        'not null' => TRUE,
+        'default' => 0,
+      ),
+      'sid' => array(
+        'description' => 'The snapshot id.',
+        'type' => 'int',
+        'not null' => TRUE,
+        'default' => 0,
+      ),
+      'pid' => array(
+        'description' => 'The project id.',
+        'type' => 'int',
+        'not null' => TRUE,
+        'default' => 0,
+      ),
+      'uid' => array(
+        'description' => 'The user id who created the project.',
+        'type' => 'int',
+        'not null' => TRUE,
+        'default' => 0,
+      ),
+      'sync_time' => array(
+        'description' => 'time when this particular entry was created',
+        'type' => 'int',
+        'not null' => TRUE,
+        'default' => 0,
+      ),
+      'issue_id' => array(
+        'description' => 'The issue id on Drupal.org.',
+        'type' => 'int',
+        'not null' => TRUE,
+        'default' => 0,
+      ),
+    ),
+    'indexes' => array(
+      'projecthealth_comment_created' => array('created'),
+    ),
+    'primary key' => array('id'),
+  );
+  return $schema;
+}
