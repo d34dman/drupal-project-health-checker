@@ -185,7 +185,7 @@ function projecthealth_project_create($sid, $project) {
     'maintenance_status' => $project->taxonomy_vocabulary_44->id,
     'development_status' => $project->taxonomy_vocabulary_46->id,
     'downloads' => $project->field_download_count,
-    'data' => $project,
+    'data' => serialize($project),
   );
 
   $project_id = db_insert('projecthealth_project')
