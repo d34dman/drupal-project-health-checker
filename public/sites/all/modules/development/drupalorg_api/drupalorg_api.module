@@ -10,10 +10,10 @@ define('DRUPALORG_API_URL', 'https://www.drupal.org/api-d7/');
 /**
  * Helper function to get data from jira instance.
  */
-function drupalorg_api_call($url) {
+function drupalorg_api_call($url, $reset = FALSE) {
   $drupalorg_api_response = &drupal_static(__FUNCTION__);
-  if (!isset($drupalorg_api_response[$url])) {
-    if ($cache = cache_get($url, 'cache_drupalorg_api')) {
+  if ($reset OR !isset($drupalorg_api_response[$url])) {
+    if (!$reset AND $cache = cache_get($url, 'cache_drupalorg_api')) {
       $drupalorg_api_response[$url] = $cache->data;
     }
     else {
