@@ -58,6 +58,12 @@ function projecthealth_schema() {
   $schema['projecthealth_user'] = array(
     'description' => 'User on Drupal.org',
     'fields' => array(
+      'id' => array(
+        'description' => 'The primary identifier for a user snapshot.',
+        'type' => 'serial',
+        'unsigned' => TRUE,
+        'not null' => TRUE,
+      ),
       'uid' => array(
         'description' => 'The user id who created the project.',
         'type' => 'int',
@@ -69,7 +75,7 @@ function projecthealth_schema() {
         'not null' => TRUE,
         'default' => 0,
       ),
-      'title' => array(
+      'name' => array(
         'description' => 'username of Drupal.org.',
         'type' => 'varchar',
         'length' => 255,
@@ -98,7 +104,7 @@ function projecthealth_schema() {
     'indexes' => array(
       'projecthealth_user_created' => array('created'),
     ),
-    'primary key' => array('uid', 'pid'),
+    'primary key' => array('id'),
   );
   $schema['projecthealth_project'] = array(
     'description' => 'Details about Project against a snapshot',
