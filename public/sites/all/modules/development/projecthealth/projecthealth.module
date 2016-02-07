@@ -182,6 +182,29 @@ function projecthealth_issue_create($sid, $pid, $issue) {
 }
 
 /**
+ * Creates a comment.
+ */
+function projecthealth_comment_create($sid, $pid, $issue, $comment) {
+
+  $fields = array(
+    'created' => $comment->created,
+    'sid' => $sid,
+    'pid' => $pid,
+    'uid' => $comment->author->id,
+    'sync_time' => REQUEST_TIME,
+    'issue_id' => $issue->nid,
+  );
+
+  $issue_id = db_insert('projecthealth_issue')
+    ->fields($fields)
+    ->execute();
+
+  projecthealth_user_update($pid, $issue->author->id, $issue->created);
+
+  return $issue_id;
+}
+
+/**
  * Creates a project.
  */
 function projecthealth_user_create($pid, $do_uid, $latest_activity = 0) {
