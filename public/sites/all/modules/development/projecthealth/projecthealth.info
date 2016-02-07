@@ -1,0 +1,6 @@
+name = Project Health
+description = "Give insights to health of Drupal.org projects"
+package = Drupal.org API
+core = 7.x
+
+dependencies[] = drupalorg_api
