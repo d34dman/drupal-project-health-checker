@@ -45,10 +45,10 @@ function projecthealth_form($form, &$form_state) {
     '#description' => t('Give the name to snapshot.'),
   );
 
-  $form['project'] = array(
+  $form['field_project_machine_name'] = array(
     '#type' => 'textfield',
-    '#title' => t('Project ID'),
-    '#description' => t('The node id of the project at Drupal.org'),
+    '#title' => t('Project machine name'),
+    '#description' => t('The machine name of the project at Drupal.org'),
   );
 
   $form['submit'] = array(

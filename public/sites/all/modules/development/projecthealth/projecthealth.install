@@ -109,8 +109,15 @@ function projecthealth_schema() {
         'unsigned' => TRUE,
         'not null' => TRUE,
       ),
+      'name' => array(
+        'description' => 'Machine name of project at Drupal.org .',
+        'type' => 'varchar',
+        'length' => 255,
+        'not null' => TRUE,
+        'default' => '',
+      ),
       'created' => array(
-        'description' => 'The Unix timestamp when the project was created on Drupa.org.',
+        'description' => 'The Unix timestamp when the project was created on Drupal.org .',
         'type' => 'int',
         'not null' => TRUE,
         'default' => 0,
