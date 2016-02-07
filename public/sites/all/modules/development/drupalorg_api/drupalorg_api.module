@@ -4,3 +4,46 @@
  * @file
  * Drupal.org API connector module.
  */
+
+define('DRUPALORG_API_URL', 'https://www.drupal.org/api-d7/');
+
+/**
+ * Helper function to get data from jira instance.
+ */
+function drupalorg_api_call($url) {
+  // Get from cache if available.
+  $response = NULL;
+  try {
+    $ch = curl_init();
+    curl_setopt($ch, CURLOPT_URL, DRUPALORG_API_URL . $url);
+    curl_setopt($ch, CURLOPT_RETURNTRANSFER, 1);
+    curl_setopt($ch, CURLOPT_SSL_VERIFYHOST, 0);
+    curl_setopt($ch, CURLOPT_SSL_VERIFYPEER, FALSE);
+    $response = _drupalorg_api_call_execute($ch);
+  }
+  catch (DrupalorgApiException $e) {
+    watchdog('drupalorg_api', $e->getMessage(), WATCHDOG_ERROR);
+  }
+  // @todo write to cache.
+  return $response;
+}
+
+
+/**
+ * Decodes cURL response.
+ */
+function _drupalorg_api_call_execute($ch) {
+  $response = curl_exec($ch);
+  $response_json_decoded = json_decode($response);
+  $http_code = curl_getinfo($ch, CURLINFO_HTTP_CODE);
+  curl_close($ch);
+  if ($http_code != 200) {
+    $error = array(
+      'code' => $http_code,
+      'response' => $response,
+    );
+    $error_message = json_encode($error);
+    throw new DrupalorgApiException($error_message);
+  }
+  return $response_json_decoded;
+}
