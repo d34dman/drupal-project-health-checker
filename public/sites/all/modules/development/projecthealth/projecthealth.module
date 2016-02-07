@@ -65,7 +65,10 @@ function projecthealth_form($form, &$form_state) {
  */
 function projecthealth_form_submit($form, $form_state) {
   $values = $form_state['values'];
-  dpm($values);
+  // Create a snapshot id for current status calculation.
+  $snapshot_id = projecthealth_snapshot_create($values['snapshot']);
+
+  $project = drupalorg_api_get_project($values['field_project_machine_name']);
 }
 
 /**
@@ -95,3 +98,22 @@ function projecthealth_cron_queue_info() {
   return $queues;
 }
 
+/**
+ * Creates a snapshot.
+ */
+function projecthealth_snapshot_create($title) {
+
+  $fields = array(
+    'created' => REQUEST_TIME,
+    'start' => 0,
+    'end' => -1,
+    'progress' => 0,
+    'title' => $title,
+  );
+
+  $snapshot_id = db_insert('projecthealth_snapshot')
+   ->fields($fields)
+   ->execute();
+
+  return $snapshot_id;
+}
