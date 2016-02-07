@@ -68,7 +68,7 @@ function drupalorg_api_get_project($machine_name) {
 }
 
 /**
- * Get details about project using machine name of the project.
+ * Get details about user on Drupal.org .
  */
 function drupalorg_api_get_user($uid) {
   $response = drupalorg_api_call('user/' . $uid . '.json');
@@ -76,9 +76,17 @@ function drupalorg_api_get_user($uid) {
 }
 
 /**
- * Get details about project using machine name of the project.
+ * Get details about issues related to project from Drupal.org .
  */
 function drupalorg_api_get_issues($project, $page = 0) {
   $response = drupalorg_api_call('node.json?type=project_issue&field_project=' . $project->nid . '&page=' . $page);
+  return $response;
+}
+
+/**
+ * Get details about comments attached to a node from Drupal.org .
+ */
+function drupalorg_api_get_comments($node, $page = 0) {
+  $response = drupalorg_api_call('comment.json?node=' . $node->nid . '&page=' . $page);
   return $response;
 }
