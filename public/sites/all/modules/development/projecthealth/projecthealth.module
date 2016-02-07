@@ -70,6 +70,17 @@ function projecthealth_form_submit($form, $form_state) {
   $project = drupalorg_api_get_project($values['field_project_machine_name']);
   $pid = projecthealth_project_create($sid, $project);
 
+  $page = 0;
+  while (TRUE) {
+    $result = drupalorg_api_get_issues($project, $page);
+    foreach ($result->list as $issue) {
+      projecthealth_issue_create($sid, $pid, $issue);
+    }
+    if (empty($result->next)) {
+      break;
+    }
+    $page++;
+  }
 }
 
 /**
@@ -142,6 +153,32 @@ function projecthealth_project_create($sid, $project) {
   projecthealth_user_update($project_id, $project->author->id, $project->created);
 
   return $project_id;
+}
+
+/**
+ * Creates a issue.
+ */
+function projecthealth_issue_create($sid, $pid, $issue) {
+
+  $fields = array(
+    'created' => $issue->created,
+    'sid' => $sid,
+    'pid' => $pid,
+    'uid' => $issue->author->id,
+    'sync_time' => REQUEST_TIME,
+    'issue_id' => $issue->nid,
+    'priority' => $issue->field_issue_priority,
+    'status' => $issue->field_issue_status,
+    'category' => $issue->field_issue_category,
+  );
+
+  $issue_id = db_insert('projecthealth_issue')
+    ->fields($fields)
+    ->execute();
+
+  projecthealth_user_update($pid, $issue->author->id, $issue->created);
+
+  return $issue_id;
 }
 
 /**

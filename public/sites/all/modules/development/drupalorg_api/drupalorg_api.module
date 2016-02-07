@@ -67,11 +67,18 @@ function drupalorg_api_get_project($machine_name) {
   return isset($response->list[0]) ? $response->list[0] : NULL;
 }
 
-
 /**
  * Get details about project using machine name of the project.
  */
 function drupalorg_api_get_user($uid) {
   $response = drupalorg_api_call('user/' . $uid . '.json');
+  return $response;
+}
+
+/**
+ * Get details about project using machine name of the project.
+ */
+function drupalorg_api_get_issues($project, $page = 0) {
+  $response = drupalorg_api_call('node.json?type=project_issue&field_project=' . $project->nid . '&page=' . $page);
   return $response;
 }
