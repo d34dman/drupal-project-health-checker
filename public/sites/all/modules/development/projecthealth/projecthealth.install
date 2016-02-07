@@ -98,7 +98,7 @@ function projecthealth_schema() {
     'indexes' => array(
       'projecthealth_user_created' => array('created'),
     ),
-    'primary key' => array('uid'),
+    'primary key' => array('uid', 'pid'),
   );
   $schema['projecthealth_project'] = array(
     'description' => 'Details about Project against a snapshot',
