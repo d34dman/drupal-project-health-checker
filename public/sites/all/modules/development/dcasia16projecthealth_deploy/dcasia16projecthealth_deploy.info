@@ -8,6 +8,7 @@ dependencies[] = entityreference
 dependencies[] = field_ui
 dependencies[] = number
 dependencies[] = list
+dependencies[] = features
 
 dependencies[] = projecthealth
 dependencies[] = drupalorg_api
