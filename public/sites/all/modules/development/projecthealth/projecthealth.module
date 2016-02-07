@@ -43,6 +43,8 @@ function projecthealth_form($form, &$form_state) {
     '#type' => 'textfield',
     '#title' => t('Snapshot name'),
     '#description' => t('Give the name to snapshot.'),
+    '#default_value' => t('All time'),
+    '#disabled' => TRUE,
   );
 
   $form['field_project_machine_name'] = array(
