@@ -2,7 +2,7 @@
 
 /**
  * @file
- * Project Health report from Drupal.org
+ * Project Health report from Drupal.org .
  */
 
 /**
@@ -13,4 +13,67 @@ function projecthealth_form_project_node_form_alter(&$form, &$form_state) {
     '#value' => t('Project details not available yet.'),
   );
   $form['body']['#access'] = FALSE;
+}
+
+/**
+ * Implements hook_menu().
+ */
+function projecthealth_menu() {
+
+  $items['projecthealth/add'] = array(
+    'title' => 'Take snapshot of a project',
+    'page callback' => 'drupal_get_form',
+    'page arguments' => array('projecthealth_form'),
+    'access arguments' => array('projecthealth take snapshot'),
+    'type' => MENU_SUGGESTED_ITEM,
+  );
+
+  return $items;
+}
+
+/**
+ * Form to create snapshot of a project.
+ *
+ * @see projecthealth_menu()
+ */
+function projecthealth_form($form, &$form_state) {
+
+  // @todo: support monthly snapshot.
+  $form['snapshot'] = array(
+    '#type' => 'textfield',
+    '#title' => t('Snapshot name'),
+    '#description' => t('Give the name to snapshot.'),
+  );
+
+  $form['project'] = array(
+    '#type' => 'textfield',
+    '#title' => t('Project ID'),
+    '#description' => t('The node id of the project at Drupal.org'),
+  );
+
+  $form['submit'] = array(
+    '#type' => 'submit',
+    '#value' => t('Create'),
+  );
+  return $form;
+}
+
+/**
+ * Submit handler for projecthealth_form().
+ */
+function projecthealth_form_submit($form, $form_state) {
+  $values = $form_state['values'];
+  dpm($values);
+}
+
+/**
+ * Implements hook_permission().
+ */
+function projecthealth_permission() {
+  return array(
+    'projecthealth take snapshot' => array(
+      'title' => t('Create Project health snapshot'),
+      'description' => t('Take a project health snapshot'),
+    ),
+  );
 }
