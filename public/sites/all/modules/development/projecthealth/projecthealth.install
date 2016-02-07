@@ -164,6 +164,13 @@ function projecthealth_schema() {
         'not null' => TRUE,
         'default' => 0,
       ),
+      'data' => array(
+        'type' => 'blob',
+        'not null' => FALSE,
+        'size' => 'big',
+        'serialize' => TRUE,
+        'description' => 'A serialized project node object.',
+      ),
     ),
     'indexes' => array(
       'projecthealth_project_created' => array('created'),
