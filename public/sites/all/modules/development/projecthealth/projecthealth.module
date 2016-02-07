@@ -226,7 +226,10 @@ function projecthealth_issue_create($sid, $pid, $issue) {
  * Creates a comment.
  */
 function projecthealth_comment_create($sid, $pid, $issue, $comment) {
-
+  // Don't log system generated comments.
+  if (empty($comment->author->id)) {
+    return;
+  }
   $fields = array(
     'created' => $comment->created,
     'sid' => $sid,
