@@ -4,3 +4,4 @@ package = Drupal.org API
 core = 7.x
 
 dependencies[] = drupalorg_api
+dependencies[] = fe_project

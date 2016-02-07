@@ -4,3 +4,13 @@
  * @file
  * Project Health report from Drupal.org
  */
+
+/**
+ * Implements hook_form_alter().
+ */
+function projecthealth_form_project_node_form_alter(&$form, &$form_state) {
+  $form['title'] = array(
+    '#value' => t('Project details not available yet.'),
+  );
+  $form['body']['#access'] = FALSE;
+}
