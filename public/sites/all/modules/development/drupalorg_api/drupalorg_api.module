@@ -58,3 +58,11 @@ function _drupalorg_api_call_execute($ch) {
   }
   return $response_json_decoded;
 }
+
+/**
+ * Get details about project using machine name of the project.
+ */
+function drupalorg_api_get_project($machine_name) {
+  $response = drupalorg_api_call('node.json?field_project_machine_name=' . $machine_name);
+  return isset($response->list[0]) ? $response->list[0] : NULL;
+}
