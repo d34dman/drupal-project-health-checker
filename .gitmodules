@@ -1,0 +1,6 @@
+[submodule "_tools/docker"]
+	path = _tools/docker
+	url = https://github.com/factorial-io/drupal-docker.git
+[submodule "_tools/fabalicious"]
+	path = _tools/fabalicious
+	url = https://github.com/factorial-io/fabalicious.git
