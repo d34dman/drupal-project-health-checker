@@ -29,7 +29,7 @@ function projecthealth_menu() {
   );
 
   $items['projecthealth/view'] = array(
-    'title' => 'Take snapshot of a project',
+    'title' => 'Projects',
     'page callback' => 'projecthealth_list_projects',
     'page arguments' => array(2),
     'access arguments' => array('access content'),
@@ -37,7 +37,7 @@ function projecthealth_menu() {
   );
 
   $items['projecthealth/view/%'] = array(
-    'title' => 'Take snapshot of a project',
+    'title' => 'Snapshots',
     'page callback' => 'projecthealth_list_project_snapshots',
     'page arguments' => array(2),
     'access arguments' => array('access content'),
@@ -45,10 +45,19 @@ function projecthealth_menu() {
   );
 
   $items['projecthealth/view/%/%'] = array(
-    'title' => 'Take snapshot of a project',
+    'title' => 'Report',
     'page callback' => 'projecthealth_view_snapshot',
     'page arguments' => array(2, 3),
     'access arguments' => array('access content'),
+    'type' => MENU_NORMAL_ITEM,
+  );
+
+
+  $items['projecthealth/delete/%/%'] = array(
+    'title' => 'Take snapshot of a project',
+    'page callback' => 'projecthealth_delete_snapshot',
+    'page arguments' => array(2, 3),
+    'access arguments' => array('projecthealth delete snapshot'),
     'type' => MENU_NORMAL_ITEM,
   );
 
@@ -139,11 +148,22 @@ function projecthealth_list_projects() {
 
   $rows = array();
   foreach ($result as $row) {
+    $links = array();
+    $links[] = array(
+      'title' => t('view'),
+      'href' => "projecthealth/view/{$row->id}/{$row->sid}",
+    );
+    $links[] = array(
+      'title' => t('delete'),
+      'href' => "projecthealth/delete/{$row->id}/{$row->sid}",
+    );
+    $operations = theme('links__ctools_dropbutton', array('links' => $links));
+
     $item = array(
       $row->id,
       $row->name,
       format_date($row->sync_time),
-      l(t('view'), "projecthealth/view/{$row->id}/{$row->sid}"),
+      $operations,
     );
     $rows[] = array('data' => $item);
   }
@@ -180,6 +200,8 @@ function projecthealth_view_snapshot($pid, $sid) {
     'sid' => $sid,
     'pid' => $pid,
   );
+  module_load_include('inc', 'projecthealth', 'projecthealth.data');
+  $data += projecthealth_generate_report_data($pid, $sid);
   return theme('projecthealth_snapshot', $data);
 }
 
@@ -204,6 +226,10 @@ function projecthealth_permission() {
     'projecthealth take snapshot' => array(
       'title' => t('Create Project health snapshot'),
       'description' => t('Take a project health snapshot'),
+    ),
+    'projecthealth delete snapshot' => array(
+      'title' => t('Delete Project health snapshot'),
+      'description' => t('Delete a project health snapshot'),
     ),
   );
 }
@@ -268,6 +294,14 @@ function projecthealth_snapshot_process_comments($data) {
     }
     $page++;
   }
+}
+
+
+/**
+ * Delete all data related to snapshot.
+ */
+function projecthealth_delete_snapshot($pid, $sid) {
+ return 'TODO';
 }
 
 /**
