@@ -35,5 +35,6 @@ stylesheets[all][] = css/custom.css
 
 scripts[] = 'js/dist/js/app.js'
 
-; Disable BootstrapCDN if using Bootstrap source files in your sub-theme.
-settings[bootstrap_cdn] = ''
+; Advanced
+; --------------
+settings[bootstrap_cdn] = 3.0.2

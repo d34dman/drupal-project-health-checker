@@ -116,4 +116,76 @@ function dcasia16_js_alter(&$js) {
 }
 
 
+function dcasia16_preprocess_ctools_dropdown(&$vars) {
+  $vars['dropdown_menu'] = array();
+  $vars['default_link']  = array();
+
+  $flag_first_item = TRUE;
+  foreach ($vars['links'] as $key => $value) {
+    $options = array();
+    $href = $value['href'];
+    if (isset($value['query'])) {
+      $options = array(
+        'query' => $value['query'],
+      );
+    }
+    $url = !empty($href) ? check_plain(url($href, $options)) : '';
+
+    if ($flag_first_item) {
+      $vars['default_link'] = $value;
+      $vars['default_link']['url'] = $url;
+      $vars['default_link']['class'] = !empty($value['attributes']['class']) ? implode(' ', $value['attributes']['class']) : '';
+    }
+    else {
+      $vars['dropdown_menu'][$key] = $value;
+      $vars['dropdown_menu'][$key]['url'] = $url;
+      $vars['dropdown_menu'][$key]['class'] = !empty($value['attributes']['class']) ? implode(' ', $value['attributes']['class']) : '';
+    }
+    $flag_first_item = FALSE;
+  }
+}
+
+function dcasia16_preprocess_links__ctools_dropbutton(&$vars) {
+  $vars['dropdown_menu'] = array();
+  $vars['default_link']  = array();
+
+  $flag_first_item = TRUE;
+  foreach ($vars['links'] as $key => $value) {
+    if (isset($value['attributes']['class'])) {
+      if ($key = array_search('icon compact add', $value['attributes']['class']) !== FALSE) {
+        unset($value['attributes']['class'][0]);
+        $value['title'] = '<i class="fa fa-plus"></i> ' . $value['title'];
+        $value['attributes']['class'][] = 'btn';
+        $value['attributes']['class'][] = 'btn-default';
+      }
+      if ($key = array_search('icon compact rearrange', $value['attributes']['class']) !== FALSE) {
+        unset($value['attributes']['class'][0]);
+        $value['title'] = '<i class="fa fa-gear"></i> ' . $value['title'];
+        $value['attributes']['class'][] = 'btn';
+        $value['attributes']['class'][] = 'btn-default';
+      }
+    }
+
+    $options = array();
+    $href = $value['href'];
+    if (isset($value['query'])) {
+      $options = array(
+        'query' => $value['query'],
+      );
+    }
+    $url = !empty($href) ? check_plain(url($href, $options)) : '';
+
+    if ($flag_first_item) {
+      $vars['default_link'] = $value;
+      $vars['default_link']['url'] = $url;
+      $vars['default_link']['class'] = !empty($value['attributes']['class']) ? implode(' ', $value['attributes']['class']) : '';
+    }
+    else {
+      $vars['dropdown_menu'][$key] = $value;
+      $vars['dropdown_menu'][$key]['url'] = $url;
+      $vars['dropdown_menu'][$key]['class'] = !empty($value['attributes']['class']) ? implode(' ', $value['attributes']['class']) : '';
+    }
+    $flag_first_item = FALSE;
+  }
+}
 
