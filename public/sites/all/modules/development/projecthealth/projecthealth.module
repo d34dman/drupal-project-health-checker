@@ -75,6 +75,7 @@ function projecthealth_form($form, &$form_state) {
     '#type' => 'textfield',
     '#title' => t('Project machine name'),
     '#description' => t('The machine name of the project at Drupal.org'),
+    '#required' => TRUE,
   );
 
   $form['submit'] = array(
@@ -83,6 +84,19 @@ function projecthealth_form($form, &$form_state) {
   );
   return $form;
 }
+
+/**
+ * Validate handler for projecthealth_form().
+ */
+function projecthealth_form_validate($form, &$form_state) {
+  $values = $form_state['values'];
+  // Create a snapshot id for current status calculation.
+  $project = drupalorg_api_get_project($values['field_project_machine_name']);
+  if (empty($project)) {
+    form_set_error('field_project_machine_name', t('Invalid project machine name.'));
+  }
+}
+
 
 /**
  * Submit handler for projecthealth_form().
