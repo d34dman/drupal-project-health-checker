@@ -10,6 +10,7 @@ dependencies[] = number
 dependencies[] = list
 dependencies[] = features
 dependencies[] = jquery_update
+dependencies[] = search
 
 dependencies[] = projecthealth
 dependencies[] = drupalorg_api
