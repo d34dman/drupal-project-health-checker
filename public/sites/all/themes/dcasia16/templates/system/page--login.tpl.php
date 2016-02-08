@@ -1,7 +1,7 @@
 <?php print $messages; ?>
 <div class="login-box">
   <div class="login-logo">
-    <a href="/"><b>Clash</b> of <b>Clans</b></a>
+    <a href="/"><b>Drupal</b> project health</a>
   </div><!-- /.login-logo -->
   <div class="login-box-body clearfix">
     <p class="login-box-msg"><?php echo render($current_active_tab); ?></p>
