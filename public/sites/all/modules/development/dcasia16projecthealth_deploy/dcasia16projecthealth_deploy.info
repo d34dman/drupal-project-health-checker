@@ -14,3 +14,4 @@ dependencies[] = search
 
 dependencies[] = projecthealth
 dependencies[] = drupalorg_api
+dependencies[] = fe_coc_app_rules_redirect_to_login
