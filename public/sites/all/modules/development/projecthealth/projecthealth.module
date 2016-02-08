@@ -175,8 +175,25 @@ function projecthealth_list_project_snapshots($project_machine_name) {
  *
  * @see projecthealth_menu()
  */
-function projecthealth_view_snapshot($project_machine_name, $snapshot_id) {
-  return 'PLACEHOLDER View ' . $project_machine_name . ' [snapshot ' . $snapshot_id . ']';
+function projecthealth_view_snapshot($pid, $sid) {
+  $data = array(
+    'sid' => $sid,
+    'pid' => $pid,
+  );
+  return theme('projecthealth_snapshot', $data);
+}
+
+/**
+ * Implements hook_theme().
+ */
+function projecthealth_theme($existing, $type, $theme, $path) {
+  return array(
+    'projecthealth_snapshot' => array(
+      'render element' => 'element',
+      'template' => 'projecthealth.snapshot',
+      'variables' => array('data' => array()),
+    ),
+  );
 }
 
 /**
