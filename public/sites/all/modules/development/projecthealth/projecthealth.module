@@ -122,7 +122,42 @@ function projecthealth_form_submit($form, $form_state) {
  * @see projecthealth_menu()
  */
 function projecthealth_list_projects() {
-  return 'PLACEHOLDER LIST';
+  $header = array(
+    array('data' => t('ID')),
+    array('data' => t('Project machine name')),
+    array('data' => t('Snapshot created')),
+    array('data' => t('Operations')),
+  );
+
+  $query = db_select('projecthealth_project', 'p')->extend('PagerDefault');
+  $query->fields('p', array('id', 'name', 'sync_time', 'sid'));
+
+  $result = $query
+    ->limit(10)
+    ->orderBy('p.name')
+    ->execute();
+
+  $rows = array();
+  foreach ($result as $row) {
+    $item = array(
+      $row->id,
+      $row->name,
+      format_date($row->sync_time),
+      l(t('view'), "projecthealth/view/{$row->id}/{$row->sid}"),
+    );
+    $rows[] = array('data' => $item);
+  }
+
+  $build['pager_table'] = array(
+    '#theme' => 'table',
+    '#header' => $header,
+    '#rows' => $rows,
+    '#empty' => t('There are no project snapshots.'),
+  );
+
+  $build['pager_pager'] = array('#theme' => 'pager');
+
+  return $build;
 }
 
 
