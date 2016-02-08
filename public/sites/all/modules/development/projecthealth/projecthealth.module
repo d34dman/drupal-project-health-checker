@@ -28,6 +28,30 @@ function projecthealth_menu() {
     'type' => MENU_SUGGESTED_ITEM,
   );
 
+  $items['projecthealth/view'] = array(
+    'title' => 'Take snapshot of a project',
+    'page callback' => 'projecthealth_list_projects',
+    'page arguments' => array(2),
+    'access arguments' => array('access content'),
+    'type' => MENU_NORMAL_ITEM,
+  );
+
+  $items['projecthealth/view/%'] = array(
+    'title' => 'Take snapshot of a project',
+    'page callback' => 'projecthealth_list_project_snapshots',
+    'page arguments' => array(2),
+    'access arguments' => array('access content'),
+    'type' => MENU_NORMAL_ITEM,
+  );
+
+  $items['projecthealth/view/%/%'] = array(
+    'title' => 'Take snapshot of a project',
+    'page callback' => 'projecthealth_view_snapshot',
+    'page arguments' => array(2, 3),
+    'access arguments' => array('access content'),
+    'type' => MENU_NORMAL_ITEM,
+  );
+
   return $items;
 }
 
@@ -75,6 +99,35 @@ function projecthealth_form_submit($form, $form_state) {
   $data['project'] = $project;
 
   projecthealth_snapshot_process_issues($data);
+}
+
+
+/**
+ * List available Projects.
+ *
+ * @see projecthealth_menu()
+ */
+function projecthealth_list_projects() {
+  return 'PLACEHOLDER LIST';
+}
+
+
+/**
+ * List available Project snapshot.
+ *
+ * @see projecthealth_menu()
+ */
+function projecthealth_list_project_snapshots($project_machine_name) {
+  return 'PLACEHOLDER LIST for ' . $project_machine_name;
+}
+
+/**
+ * View Project snapshot.
+ *
+ * @see projecthealth_menu()
+ */
+function projecthealth_view_snapshot($project_machine_name, $snapshot_id) {
+  return 'PLACEHOLDER View ' . $project_machine_name . ' [snapshot ' . $snapshot_id . ']';
 }
 
 /**
