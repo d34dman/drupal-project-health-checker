@@ -1,6 +1,6 @@
 <footer class="main-footer">
   <div class="pull-right hidden-xs">
-    <b>Version</b> 0.1.0
+    Theme credits <a href="https://github.com/almasaeed2010/AdminLTE"><b>AdminLTE</b></a>
   </div>
   <strong>Copyright &copy; 2015-2016 <a href="http://www.digitwings.com">Digitwings</a>.</strong> All rights reserved.
 </footer>
