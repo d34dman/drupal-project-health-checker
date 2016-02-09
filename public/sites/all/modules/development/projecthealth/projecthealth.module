@@ -219,6 +219,7 @@ function projecthealth_view_snapshot($pid, $sid) {
   );
   module_load_include('inc', 'projecthealth', 'projecthealth.data');
   $data += projecthealth_generate_report_data($pid, $sid);
+  drupal_set_title(check_plain($data['project']->data->title));
   return theme('projecthealth_snapshot', $data);
 }
 

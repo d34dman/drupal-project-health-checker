@@ -23,6 +23,8 @@ function projecthealth_generate_report_data($pid, $sid) {
     'end_date' => date('Y-m-d H:i:s', $end),
     'project' => $project,
     'snapshot' => $snapshot,
+    'issues' => projecthealth_generate_issue_report($pid, $sid, $start, $end),
+    'comments' => projecthealth_generate_comment_report($pid, $sid, $start, $end),
     'users' => projecthealth_generate_user_report($pid, $sid, $start, $end),
   );
   return $data;
@@ -54,7 +56,7 @@ function projecthealth_generate_issue_report($pid, $sid, $start, $end) {
     ))
     ->fetchField();
   $open = array(1, 8, 13, 14, 15);
-  $issue->closedCount = db_query("SELECT COUNT(*) AS num
+  $issue->openCount = db_query("SELECT COUNT(*) AS num
     FROM {projecthealth_issue}
     WHERE pid = :pid AND status IN (:open) AND created >= :start AND created < :end",
     array(
@@ -65,6 +67,24 @@ function projecthealth_generate_issue_report($pid, $sid, $start, $end) {
     ))
     ->fetchField();
   return $issue;
+}
+
+
+/**
+ * Issue report.
+ */
+function projecthealth_generate_comment_report($pid, $sid, $start, $end) {
+  $comment = new stdClass();
+  $comment->totalCount = db_query("SELECT COUNT(*) AS num
+    FROM {projecthealth_comment}
+    WHERE pid = :pid AND created >= :start AND created < :end",
+    array(
+      ":pid" => $pid,
+      ":start" => $start,
+      ":end" => $end,
+    ))
+    ->fetchField();
+  return $comment;
 }
 
 /**
