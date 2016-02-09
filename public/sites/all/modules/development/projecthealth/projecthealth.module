@@ -268,10 +268,12 @@ function projecthealth_view_snapshot($project_name, $sid) {
       ':sid' => $sid,
     )
   )->fetchField();
+
   $data = array(
     'sid' => $sid,
     'pid' => $pid,
   );
+  module_load_include('inc', 'projecthealth', 'projecthealth.lookup');
   module_load_include('inc', 'projecthealth', 'projecthealth.data');
   $data += projecthealth_generate_report_data($pid, $sid);
   drupal_set_title(check_plain($data['project']->data->title));
@@ -574,6 +576,7 @@ function projecthealth_user_create($pid, $do_uid, $latest_activity = 0, $maintai
       'pid' => $pid,
       'maintainer' => $maintainer,
       'latest_activity' => $latest_activity,
+      'data' => serialize($user),
     );
     $user_id = db_insert('projecthealth_user')
       ->fields($fields)

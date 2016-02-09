@@ -98,6 +98,8 @@ function projecthealth_generate_user_report($pid, $sid, $start, $end) {
     WHERE pu.pid = :pid', array(':pid' => $pid)
   );
   foreach ($result as $record) {
+    $record->data = unserialize($record->data);
+    $record->data->country = projecthealth_get_country_codes($record->data->field_country);
     $users[$record->uid] = $record;
     $users[$record->uid]->issueCount = '0';
     $users[$record->uid]->commentCount = '0';
