@@ -138,7 +138,7 @@ function projecthealth_form_submit($form, $form_state) {
   projecthealth_snapshot_process_maintainers($data);
   projecthealth_snapshot_process_issues($data);
 
-  drupal_got("projecthealth/view/$pid/$sid");
+  drupal_goto("projecthealth/view/$pid/$sid");
 }
 
 
