@@ -386,8 +386,17 @@ function projecthealth_snapshot_process_maintainers($data) {
 /**
  * Delete all data related to snapshot.
  */
-function projecthealth_delete_snapshot($pid, $sid) {
-
+function projecthealth_delete_snapshot($project_name, $sid) {
+  $pid = db_query('SELECT id FROM {projecthealth_project} WHERE name = :project_name AND sid = :sid',
+    array(
+      ':project_name' => $project_name,
+      ':sid' => $sid,
+    )
+  )->fetchField();
+  $data = array(
+    'sid' => $sid,
+    'pid' => $pid,
+  );
   // Delete snapshot sid.
   $count = db_delete('projecthealth_snapshot')->condition('id', $sid)->execute();
   if ($count) {
@@ -508,7 +517,7 @@ function projecthealth_issue_create($sid, $pid, $issue) {
     'created' => $issue->created,
     'sid' => $sid,
     'pid' => $pid,
-    'uid' => $issue->author->id,
+    'uid' => isset($issue->author->id) ? $issue->author->id : 0,
     'sync_time' => REQUEST_TIME,
     'issue_id' => $issue->nid,
     'priority' => $issue->field_issue_priority,
