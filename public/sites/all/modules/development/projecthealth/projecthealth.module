@@ -168,11 +168,11 @@ function projecthealth_list_projects() {
     $links = array();
     $links[] = array(
       'title' => t('view'),
-      'href' => "projecthealth/view/{$row->id}/{$row->sid}",
+      'href' => "projecthealth/view/{$row->name}/{$row->sid}",
     );
     $links[] = array(
       'title' => t('delete'),
-      'href' => "projecthealth/delete/{$row->id}/{$row->sid}",
+      'href' => "projecthealth/delete/{$row->name}/{$row->sid}",
     );
     $operations = theme('links__ctools_dropbutton', array('links' => $links));
 
@@ -204,7 +204,55 @@ function projecthealth_list_projects() {
  * @see projecthealth_menu()
  */
 function projecthealth_list_project_snapshots($project_machine_name) {
-  return 'PLACEHOLDER LIST for ' . $project_machine_name;
+
+  $header = array(
+    array('data' => t('ID')),
+    array('data' => t('Project machine name')),
+    array('data' => t('Snapshot created')),
+    array('data' => t('Operations')),
+  );
+
+  $query = db_select('projecthealth_project', 'p')->extend('PagerDefault');
+  $query->condition('p.name', $project_machine_name);
+  $query->fields('p', array('id', 'name', 'sync_time', 'sid'));
+
+  $result = $query
+    ->limit(10)
+    ->orderBy('p.name')
+    ->execute();
+
+  $rows = array();
+  foreach ($result as $row) {
+    $links = array();
+    $links[] = array(
+      'title' => t('view'),
+      'href' => "projecthealth/view/{$row->name}/{$row->sid}",
+    );
+    $links[] = array(
+      'title' => t('delete'),
+      'href' => "projecthealth/delete/{$row->name}/{$row->sid}",
+    );
+    $operations = theme('links__ctools_dropbutton', array('links' => $links));
+
+    $item = array(
+      $row->id,
+      $row->name,
+      format_date($row->sync_time),
+      $operations,
+    );
+    $rows[] = array('data' => $item);
+  }
+
+  $build['pager_table'] = array(
+    '#theme' => 'table',
+    '#header' => $header,
+    '#rows' => $rows,
+    '#empty' => t('There are no project snapshots.'),
+  );
+
+  $build['pager_pager'] = array('#theme' => 'pager');
+
+  return $build;
 }
 
 /**
@@ -212,7 +260,14 @@ function projecthealth_list_project_snapshots($project_machine_name) {
  *
  * @see projecthealth_menu()
  */
-function projecthealth_view_snapshot($pid, $sid) {
+function projecthealth_view_snapshot($project_name, $sid) {
+
+  $pid = db_query('SELECT id FROM {projecthealth_project} WHERE name = :project_name AND sid = :sid',
+    array(
+      ':project_name' => $project_name,
+      ':sid' => $sid,
+    )
+  )->fetchField();
   $data = array(
     'sid' => $sid,
     'pid' => $pid,
