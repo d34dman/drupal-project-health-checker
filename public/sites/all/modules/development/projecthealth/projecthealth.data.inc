@@ -9,15 +9,21 @@
  * Function to generate report data for project snapshot.
  */
 function projecthealth_generate_report_data($pid, $sid) {
+  $start = isset($_GET['start']) ? strtotime($_GET['start']) : PROJECTHEALTH_DEFAULT_START_TIME;
+  $end = isset($_GET['end']) ? strtotime($_GET['end']) : PROJECTHEALTH_DEFAULT_END_TIME;
+
+  // @todo: implement caching.
   $project = db_query("SELECT * from {projecthealth_project} WHERE id = :pid LIMIT 1", array(":pid" => $pid))->fetchObject();
   $project->data = unserialize($project->data);
   $snapshot = db_query("SELECT * from {projecthealth_snapshot} WHERE id = :sid LIMIT 1", array(":sid" => $sid))->fetchObject();
   $data = array(
+    'start' => $start,
+    'start_date' => date('Y-m-d H:i:s', $start),
+    'end' => $end,
+    'end_date' => date('Y-m-d H:i:s', $end),
     'project' => $project,
     'snapshot' => $snapshot,
-    'issue' => projecthealth_generate_issue_report($pid, $sid),
-    'users' => projecthealth_generate_user_report($pid, $sid),
-    'comments' => projecthealth_generate_comment_report($pid, $sid),
+    'users' => projecthealth_generate_user_report($pid, $sid, $start, $end),
   );
   return $data;
 }
@@ -25,46 +31,86 @@ function projecthealth_generate_report_data($pid, $sid) {
 /**
  * Issue report.
  */
-function projecthealth_generate_issue_report($pid, $sid) {
+function projecthealth_generate_issue_report($pid, $sid, $start, $end) {
   $issue = new stdClass();
-  $issue->totalCount = db_query("SELECT COUNT(*) as num from {projecthealth_issue} WHERE pid = :pid", array(":pid" => $pid))->fetchField();
+  $issue->totalCount = db_query("SELECT COUNT(*) AS num
+    FROM {projecthealth_issue}
+    WHERE pid = :pid AND created >= :start AND created < :end",
+    array(
+      ":pid" => $pid,
+      ":start" => $start,
+      ":end" => $end,
+    ))
+    ->fetchField();
   $closed = array(2, 3, 4, 5, 6, 7, 16, 18);
-  $issue->closedCount = db_query("SELECT COUNT(*) as num from {projecthealth_issue} WHERE pid = :pid AND status IN (:closed)", array(":pid" => $pid, ":closed" => $closed))->fetchField();
+  $issue->closedCount = db_query("SELECT COUNT(*) AS num
+    FROM {projecthealth_issue}
+    WHERE pid = :pid AND status IN (:closed) AND created >= :start AND created < :end",
+    array(
+      ":pid" => $pid,
+      ":closed" => $closed,
+      ":start" => $start,
+      ":end" => $end,
+    ))
+    ->fetchField();
   $open = array(1, 8, 13, 14, 15);
-  $issue->activeCount = db_query("SELECT COUNT(*) as num from {projecthealth_issue} WHERE pid = :pid AND status IN (:open)", array(":pid" => $pid, ":open" => $open))->fetchField();
+  $issue->closedCount = db_query("SELECT COUNT(*) AS num
+    FROM {projecthealth_issue}
+    WHERE pid = :pid AND status IN (:open) AND created >= :start AND created < :end",
+    array(
+      ":pid" => $pid,
+      ":open" => $open,
+      ":start" => $start,
+      ":end" => $end,
+    ))
+    ->fetchField();
   return $issue;
 }
 
 /**
  * Issue report.
  */
-function projecthealth_generate_user_report($pid, $sid) {
-  $result = db_query('SELECT pu.uid, pu.name, COUNT(pi.id) as issues
+function projecthealth_generate_user_report($pid, $sid, $start, $end) {
+  $users = array();
+
+  $result = db_query('SELECT *
+    FROM {projecthealth_user} as pu
+    WHERE pu.pid = :pid', array(':pid' => $pid)
+  );
+  foreach ($result as $record) {
+    $users[$record->uid] = $record;
+    $users[$record->uid]->issueCount = '0';
+    $users[$record->uid]->commentCount = '0';
+  }
+
+  $result = db_query('SELECT pu.uid, pu.name, COUNT(pi.id) as issueCount
     FROM {projecthealth_user} as pu
     LEFT JOIN {projecthealth_issue} as pi ON pu.uid = pi.uid
-    WHERE pu.pid = :pid
-    GROUP BY pu.uid ORDER BY issues DESC', array(':pid' => $pid)
+    WHERE pu.pid = :pid AND pi.created >= :start AND pi.created < :end
+    GROUP BY pu.uid ORDER BY issueCount DESC',
+    array(
+      ':pid' => $pid,
+      ':start' => $start,
+      ':end' => $end,
+    )
   );
-  $users = array();
   foreach ($result as $record) {
-    $users[] = $record;
+    $users[$record->uid]->issueCount = $record->issueCount;
   }
-  return $users;
-}
 
-/**
- * Comment report.
- */
-function projecthealth_generate_comment_report($pid, $sid) {
-  $result = db_query('SELECT pu.uid, pu.name, COUNT(pc.id) as issues
+  $result = db_query('SELECT pu.uid, pu.name, COUNT(pc.id) as commentCount
     FROM {projecthealth_user} as pu
     LEFT JOIN {projecthealth_comment} as pc ON pu.uid = pc.uid
-    WHERE pu.pid = :pid
-    GROUP BY pu.uid ORDER BY issues DESC', array(':pid' => $pid)
+    WHERE pu.pid = :pid AND pc.created >= :start AND pc.created < :end
+    GROUP BY pu.uid ORDER BY commentCount DESC',
+    array(
+      ':pid' => $pid,
+      ':start' => $start,
+      ':end' => $end,
+    )
   );
-  $users = array();
   foreach ($result as $record) {
-    $users[] = $record;
+    $users[$record->uid]->commentCount = $record->commentCount;
   }
   return $users;
 }

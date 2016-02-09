@@ -5,6 +5,11 @@
  * Project Health report from Drupal.org .
  */
 
+define('PROJECTHEALTH_DEFAULT_START_TIME', '0');
+
+// 1800000000 is 2027-01-15 08:00:00
+define('PROJECTHEALTH_DEFAULT_END_TIME', '1800000000');
+
 /**
  * Implements hook_form_alter().
  */
@@ -52,6 +57,15 @@ function projecthealth_menu() {
     'type' => MENU_NORMAL_ITEM,
   );
 
+  $items['projecthealth/data/%/%'] = array(
+    'page callback' => 'projecthealth_generate_report_data',
+    'page arguments' => array(2, 3),
+    'delivery callback' => 'drupal_json_output',
+    'access arguments' => array('access content'),
+    'type' => MENU_CALLBACK,
+    'file' => 'projecthealth.data.inc',
+    'file path' => drupal_get_path('module', 'projecthealth'),
+  );
 
   $items['projecthealth/delete/%/%'] = array(
     'title' => 'Take snapshot of a project',
@@ -121,6 +135,7 @@ function projecthealth_form_submit($form, $form_state) {
   $data['pid'] = $pid;
   $data['project'] = $project;
 
+  projecthealth_snapshot_process_maintainers($data);
   projecthealth_snapshot_process_issues($data);
 }
 
@@ -296,6 +311,19 @@ function projecthealth_snapshot_process_comments($data) {
   }
 }
 
+/**
+ * Process all maintainers for the project.
+ */
+function projecthealth_snapshot_process_maintainers($data) {
+  $project = $data['project'];
+  $sid = $data['sid'];
+  $pid = $data['pid'];
+  $result = drupalorg_api_get_maintainers($project);
+  foreach ($result as $do_uid => $user) {
+    projecthealth_user_create($pid, $do_uid, 0, 1);
+  }
+}
+
 
 /**
  * Delete all data related to snapshot.
@@ -405,7 +433,7 @@ function projecthealth_comment_create($sid, $pid, $issue, $comment) {
 /**
  * Creates a project.
  */
-function projecthealth_user_create($pid, $do_uid, $latest_activity = 0) {
+function projecthealth_user_create($pid, $do_uid, $latest_activity = 0, $maintainer = 0) {
   $user_id = NULL;
   $user = drupalorg_api_get_user($do_uid);
   if ($user) {
@@ -414,7 +442,7 @@ function projecthealth_user_create($pid, $do_uid, $latest_activity = 0) {
       'created' => $user->created,
       'name' => $user->name,
       'pid' => $pid,
-      'maintainer' => -1,
+      'maintainer' => $maintainer,
       'latest_activity' => $latest_activity,
     );
     $user_id = db_insert('projecthealth_user')
