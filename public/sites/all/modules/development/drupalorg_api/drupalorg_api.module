@@ -24,7 +24,7 @@ function drupalorg_api_call($url, $reset = FALSE) {
       }
       try {
         $ch = curl_init();
-        curl_setopt($ch, CURLOPT_URL, DRUPALORG_API_URL . $url);
+        curl_setopt($ch, CURLOPT_URL, $url);
         curl_setopt($ch, CURLOPT_RETURNTRANSFER, 1);
         curl_setopt($ch, CURLOPT_SSL_VERIFYHOST, 0);
         curl_setopt($ch, CURLOPT_SSL_VERIFYPEER, FALSE);
@@ -63,7 +63,7 @@ function _drupalorg_api_call_execute($ch) {
  * Get details about project using machine name of the project.
  */
 function drupalorg_api_get_project($machine_name) {
-  $response = drupalorg_api_call('node.json?field_project_machine_name=' . $machine_name);
+  $response = drupalorg_api_call(DRUPALORG_API_URL . 'node.json?field_project_machine_name=' . $machine_name);
   return isset($response->list[0]) ? $response->list[0] : NULL;
 }
 
@@ -79,7 +79,7 @@ function drupalorg_api_get_user($uid) {
  * Get details about issues related to project from Drupal.org .
  */
 function drupalorg_api_get_issues($project, $page = 0) {
-  $response = drupalorg_api_call('node.json?type=project_issue&field_project=' . $project->nid . '&page=' . $page);
+  $response = drupalorg_api_call(DRUPALORG_API_URL . 'node.json?type=project_issue&field_project=' . $project->nid . '&page=' . $page);
   return $response;
 }
 
@@ -87,6 +87,15 @@ function drupalorg_api_get_issues($project, $page = 0) {
  * Get details about comments attached to a node from Drupal.org .
  */
 function drupalorg_api_get_comments($node, $page = 0) {
-  $response = drupalorg_api_call('comment.json?node=' . $node->nid . '&page=' . $page);
+  $response = drupalorg_api_call(DRUPALORG_API_URL . 'comment.json?node=' . $node->nid . '&page=' . $page);
+  return $response;
+}
+
+
+/**
+ * Get details about maintainers attached to a node from Drupal.org .
+ */
+function drupalorg_api_get_maintainers($project) {
+  $response = drupalorg_api_call("https://www.drupal.org/project/{$project->name}/maintainers.json");
   return $response;
 }
