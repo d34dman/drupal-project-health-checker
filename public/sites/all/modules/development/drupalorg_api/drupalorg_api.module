@@ -71,7 +71,7 @@ function drupalorg_api_get_project($machine_name) {
  * Get details about user on Drupal.org .
  */
 function drupalorg_api_get_user($uid) {
-  $response = drupalorg_api_call('user/' . $uid . '.json');
+  $response = drupalorg_api_call(DRUPALORG_API_URL . 'user/' . $uid . '.json');
   return $response;
 }
 
@@ -96,6 +96,6 @@ function drupalorg_api_get_comments($node, $page = 0) {
  * Get details about maintainers attached to a node from Drupal.org .
  */
 function drupalorg_api_get_maintainers($project) {
-  $response = drupalorg_api_call("https://www.drupal.org/project/{$project->name}/maintainers.json");
+  $response = drupalorg_api_call("https://www.drupal.org/project/{$project->field_project_machine_name}/maintainers.json");
   return $response;
 }
