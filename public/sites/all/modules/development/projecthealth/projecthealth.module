@@ -329,7 +329,38 @@ function projecthealth_snapshot_process_maintainers($data) {
  * Delete all data related to snapshot.
  */
 function projecthealth_delete_snapshot($pid, $sid) {
- return 'TODO';
+  // Delete snapshot sid
+  $count = db_delete('projecthealth_snapshot')->condition('id', $sid)->execute();
+  if ($count) {
+    drupal_set_message(t('Successfully deleted snapshot [sid @sid]', array('@sid' => $sid)), 'status');
+  }
+
+  // Delete project pid
+  $count = db_delete('projecthealth_project')->condition('id', $pid)->execute();
+  if ($count) {
+    drupal_set_message(t('Successfully deleted project in snapshot [sid @sid] for project [pid @pid]', array('@sid' => $sid, '@pid' => $pid)), 'status');
+  }
+
+
+  // Delete all issues taggeed with sid pid
+  $count = db_delete('projecthealth_issue')->condition('pid', $pid)->condition('sid', $sid)->execute();
+  if ($count) {
+    drupal_set_message(t('Successfully deleted the @count issues in snapshot [sid @sid] for project [pid @pid]', array('@count' => $count,'@sid' => $sid, '@pid' => $pid)), 'status');
+  }
+
+  // Delete all comments tagged with sid pid
+  $count = db_delete('projecthealth_comment')->condition('pid', $pid)->condition('sid', $sid)->execute();
+  if ($count) {
+    drupal_set_message(t('Successfully deleted the @count comments in snapshot [sid @sid] for project [pid @pid]', array('@count' => $count,'@sid' => $sid, '@pid' => $pid)), 'status');
+  }
+
+  // Delete all users tagged with pid
+  $count = db_delete('projecthealth_user')->condition('pid', $pid)->execute();
+  if ($count) {
+    drupal_set_message(t('Successfully deleted the @count users in snapshot [sid @sid] for project [pid @pid]', array('@count' => $count,'@sid' => $sid, '@pid' => $pid)), 'status');
+  }
+
+  drupal_goto('projecthealth/view');
 }
 
 /**
