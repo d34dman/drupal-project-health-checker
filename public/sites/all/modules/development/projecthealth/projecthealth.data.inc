@@ -26,7 +26,6 @@ function projecthealth_generate_report_data($pid, $sid, $start = PROJECTHEALTH_D
     'users' => projecthealth_generate_user_report($pid, $sid, $start, $end),
     'users_map' => projecthealth_generate_country_report($pid, $sid, $start, $end),
   );
-  dpm($data);
   return $data;
 }
 

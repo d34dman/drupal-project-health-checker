@@ -312,7 +312,6 @@ function projecthealth_view_snapshot($project_name, $sid) {
   $data['current'] = projecthealth_generate_report_data($pid, $sid, strtotime('-1 month', $data['total']['snapshot']->created), PROJECTHEALTH_DEFAULT_END_TIME);
 
   drupal_set_title(check_plain($data['total']['project']->data->title));
-  dpm($data);
   return theme('projecthealth_snapshot', $data);
 }
 
