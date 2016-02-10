@@ -367,6 +367,7 @@ function projecthealth_snapshot_process_issues_per_page($data) {
   $issue_pager_max = $data['pager_max'];
   $comment_data = $data;
   $comment_data['issue_page'] = $page;
+  $comment_data['issue_pager_max'] = $issue_pager_max;
   $comment_data['pager_max'] = 0;
   $is_issues_last_page = $comment_data['is_issues_last_page'] = ($page == $issue_pager_max);
 
@@ -394,6 +395,7 @@ function projecthealth_snapshot_process_comments_per_page($data) {
   $pid = $data['pid'];
   $page = $data['page'];
   $issue_page = $data['issue_page'];
+  $issue_pager_max = $data['issue_pager_max'];
   $pager_max = $data['pager_max'];
   $is_issues_last_page = $data['is_issues_last_page'];
   $is_comments_last_page = ($page == $pager_max);
