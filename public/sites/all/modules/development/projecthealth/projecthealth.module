@@ -136,44 +136,15 @@ function projecthealth_form_submit($form, &$form_state) {
   $data['project'] = $project;
 
   projecthealth_snapshot_process_maintainers($data);
-  // projecthealth_snapshot_process_issues($data);
-  // @todo either use Drupal queue or batch api.
-  // Step 1: Obtain all the pages for issue
   $pager_max = _projecthealth_get_issues_pager_max($data);
   $data['pager_max'] = $pager_max;
+  $queue = DrupalQueue::get('projectHealthIssuesIndex');
   for ($page=0; $page <= $pager_max; $page++) {
-    $operations[] = array(
-      'projecthealth_snapshot_process_issues_per_page',
-      array(
-        $data,
-        $page,
-      ),
-    );
+    $data['page'] = $page;
+    $queue->createItem($data);
   }
-  $batch = array(
-    'title' => t('Exporting'),
-    'operations' => $operations,
-    'finished' => 'projecthealth_snapshot_create_batch_finish',
-  );
   $form_state['redirect'] = "projecthealth/view/{$project->field_project_machine_name}/$sid";
-  batch_set($batch);
 }
-
-/**
- * Finished callback for issues import batch.
- */
-function projecthealth_snapshot_create_batch_finish($success, $results, $operations) {
-  // The 'success' parameter means no fatal PHP errors were detected. All
-  // other error management should be handled using 'results'.
-  if ($success) {
-    $message = format_plural(count($results), 'One page processed.', '@count pages processed.');
-  }
-  else {
-    $message = t('Finished with an error.');
-  }
-  drupal_set_message($message);
-}
-
 
 /**
  * Get number of issue pages for a project.
@@ -183,6 +154,21 @@ function _projecthealth_get_issues_pager_max($data) {
   $sid = $data['sid'];
   $pid = $data['pid'];
   $result = drupalorg_api_get_issues($project, 0);
+  if (empty($result->last)) {
+    return 0;
+  }
+  return _projecthealth_get_page_number($result->last);
+}
+
+/**
+ * Get number of issue pages for a project.
+ */
+function _projecthealth_get_comments_pager_max($data) {
+  $project = $data['project'];
+  $issue = $data['issue'];
+  $sid = $data['sid'];
+  $pid = $data['pid'];
+  $result = drupalorg_api_get_comments($issue, $page);
   if (empty($result->last)) {
     return 0;
   }
@@ -368,11 +354,11 @@ function projecthealth_permission() {
  * Implements hook_cron_queue_info().
  */
 function projecthealth_cron_queue_info() {
-  $queues['projecthealth_issues'] = array(
+  $queues['projectHealthIssuesIndex'] = array(
     'worker callback' => 'projecthealth_snapshot_process_issues',
     'time' => 30,
   );
-  $queues['projecthealth_comments'] = array(
+  $queues['projectHealthCommentsIndex'] = array(
     'worker callback' => 'projecthealth_snapshot_process_comments',
     'time' => 30,
   );
@@ -407,30 +393,25 @@ function projecthealth_snapshot_process_issues($data) {
 /**
  * Given issue node id, process all comments under the node.
  */
-function projecthealth_snapshot_process_issues_per_page($data, $page = 0, &$context) {
-  if (empty($context['sandbox'])) {
-    $context['sandbox']['progress'] = 0;
-    $context['sandbox']['max'] = $data['pager_max'];
-  }
-  $context['sandbox']['current'] = $page;
-  $context['message'] = check_plain($page);
+function projecthealth_snapshot_process_issues_per_page($data) {
 
   $project = $data['project'];
   $sid = $data['sid'];
   $pid = $data['pid'];
+  $page = $data['page'];
 
   $comment_data = $data;
 
   $result = drupalorg_api_get_issues($project, $page);
+  $queue = DrupalQueue::get('projectHealthCommentsIndex');
   foreach ($result->list as $issue) {
     projecthealth_issue_create($sid, $pid, $issue);
     $comment_data['issue'] = $issue;
-    projecthealth_snapshot_process_comments($comment_data);
-    $context['results'][] = $issue->nid . ' : ' . check_plain($issue->title);
-    $context['message'] = check_plain($issue->title);
-  }
-  if ($context['sandbox']['progress'] < $context['sandbox']['max']) {
-    $context['finished'] = $context['sandbox']['progress'] / $context['sandbox']['max'];
+    $pager_max = _projecthealth_get_comments_pager_max($comment_data);
+    for ($page=0; $page <= $pager_max; $page++) {
+      $comment_data['page'] = $page;
+      $queue->createItem($comment_data);
+    }
   }
 }
 
@@ -453,6 +434,22 @@ function projecthealth_snapshot_process_comments($data) {
       break;
     }
     $page++;
+  }
+}
+
+/**
+ * Given issue node id, process all comments under the node.
+ */
+function projecthealth_snapshot_process_comments_per_page($data) {
+  $issue = $data['issue'];
+  $project = $data['project'];
+  $sid = $data['sid'];
+  $pid = $data['pid'];
+  $page = $data['page'];
+
+  $result = drupalorg_api_get_comments($issue, $page);
+  foreach ($result->list as $comment) {
+    projecthealth_comment_create($sid, $pid, $issue, $comment);
   }
 }
 
