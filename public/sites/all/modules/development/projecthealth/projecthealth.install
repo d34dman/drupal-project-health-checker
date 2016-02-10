@@ -86,14 +86,12 @@ function projecthealth_schema() {
         'description' => '3 character country code',
         'type' => 'varchar',
         'length' => 5,
-        'not null' => TRUE,
         'default' => '',
       ),
       'gender' => array(
         'description' => 'Gender',
         'type' => 'varchar',
         'length' => 20,
-        'not null' => TRUE,
         'default' => '',
       ),
       'pid' => array(
