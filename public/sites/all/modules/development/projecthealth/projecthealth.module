@@ -617,6 +617,7 @@ function projecthealth_user_create($pid, $do_uid, $latest_activity = 0, $maintai
       'created' => $user->created,
       'name' => $user->name,
       'country_code' => projecthealth_get_country_codes($user->field_country),
+      'gender' => $user->field_gender,
       'pid' => $pid,
       'maintainer' => $maintainer,
       'latest_activity' => $latest_activity,

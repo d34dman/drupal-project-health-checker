@@ -83,9 +83,16 @@ function projecthealth_schema() {
         'default' => '',
       ),
       'country_code' => array(
-        'description' => 'Country Code',
+        'description' => '3 character country code',
         'type' => 'varchar',
-        'length' => 255,
+        'length' => 5,
+        'not null' => TRUE,
+        'default' => '',
+      ),
+      'gender' => array(
+        'description' => 'Gender',
+        'type' => 'varchar',
+        'length' => 20,
         'not null' => TRUE,
         'default' => '',
       ),
