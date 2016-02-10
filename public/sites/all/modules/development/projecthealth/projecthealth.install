@@ -82,6 +82,13 @@ function projecthealth_schema() {
         'not null' => TRUE,
         'default' => '',
       ),
+      'country_code' => array(
+        'description' => 'Country Code',
+        'type' => 'varchar',
+        'length' => 255,
+        'not null' => TRUE,
+        'default' => '',
+      ),
       'pid' => array(
         'description' => 'The project id.',
         'type' => 'int',

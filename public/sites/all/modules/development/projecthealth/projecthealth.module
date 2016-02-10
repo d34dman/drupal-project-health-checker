@@ -10,6 +10,9 @@ define('PROJECTHEALTH_DEFAULT_START_TIME', '0');
 // 1800000000 is 2027-01-15 08:00:00
 define('PROJECTHEALTH_DEFAULT_END_TIME', '1800000000');
 
+module_load_include('inc', 'projecthealth', 'projecthealth.lookup');
+module_load_include('inc', 'projecthealth', 'projecthealth.data');
+
 /**
  * Implements hook_menu().
  */
@@ -304,8 +307,6 @@ function projecthealth_view_snapshot($project_name, $sid) {
     'sid' => $sid,
     'pid' => $pid,
   );
-  module_load_include('inc', 'projecthealth', 'projecthealth.lookup');
-  module_load_include('inc', 'projecthealth', 'projecthealth.data');
   $data += projecthealth_generate_report_data($pid, $sid);
   drupal_set_title(check_plain($data['project']->data->title));
   return theme('projecthealth_snapshot', $data);
@@ -615,6 +616,7 @@ function projecthealth_user_create($pid, $do_uid, $latest_activity = 0, $maintai
       'uid' => $user->uid,
       'created' => $user->created,
       'name' => $user->name,
+      'country_code' => projecthealth_get_country_codes($user->field_country),
       'pid' => $pid,
       'maintainer' => $maintainer,
       'latest_activity' => $latest_activity,
