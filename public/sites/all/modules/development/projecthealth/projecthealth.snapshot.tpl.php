@@ -1,20 +1,26 @@
 <section class="content">
   <div class="row">
     <div class="col-md-3 col-sm-6 col-xs-12">
-      <div class="info-box">
-        <span class="info-box-icon bg-aqua"><i class="fa fa-download"></i></span>
+      <div class="info-box bg-aqua">
+        <span class="info-box-icon"><i class="fa fa-info"></i></span>
         <div class="info-box-content">
-          <span class="info-box-text">Downloads</span>
-          <span class="info-box-number"><?php echo $project->downloads; ?></span>
+          <span class="info-box-text">Index status</span>
+          <span class="info-box-number"><?php echo $snapshot->progress; ?>%</span>
+          <div class="progress">
+            <div class="progress-bar" style="width: <?php echo $snapshot->progress; ?>%"></div>
+          </div>
+          <span class="progress-description">
+            <?php echo format_date($snapshot->created); ?>
+          </span>
         </div>
       </div>
     </div>
     <div class="col-md-3 col-sm-6 col-xs-12">
-      <div class="info-box">
-        <span class="info-box-icon bg-green"><i class="fa fa-users"></i></span>
+      <div class="info-box bg-green">
+        <span class="info-box-icon "><i class="fa fa-download"></i></span>
         <div class="info-box-content">
-          <span class="info-box-text">Users</span>
-          <span class="info-box-number"><?php echo count($users); ?></span>
+          <span class="info-box-text">Downloads</span>
+          <span class="info-box-number"><?php echo $project->downloads; ?></span>
         </div>
         <!-- /.info-box-content -->
       </div>
