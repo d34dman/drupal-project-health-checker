@@ -383,7 +383,7 @@ function projecthealth_snapshot_process_issues_per_page($data) {
   }
 
   if (!$is_issues_last_page AND $issue_pager_max) {
-    projecthealth_snapshot_progress_update($sid, (int)($page/$issue_pager_max));
+    projecthealth_snapshot_progress_update($sid, (int)(100 * $page/$issue_pager_max));
   }
 }
 
