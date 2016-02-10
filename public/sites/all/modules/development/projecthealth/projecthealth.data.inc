@@ -132,7 +132,9 @@ function projecthealth_generate_user_report($pid, $sid, $start, $end) {
     )
   );
   foreach ($result as $record) {
-    $users[$record->uid]->commentCount = $record->commentCount;
+    if (isset($users[$record->uid])) {
+      $users[$record->uid]->commentCount = $record->commentCount;
+    }
   }
   return $users;
 }

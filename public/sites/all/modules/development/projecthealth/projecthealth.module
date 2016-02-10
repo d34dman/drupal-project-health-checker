@@ -407,7 +407,7 @@ function projecthealth_snapshot_process_comments_per_page($data) {
     projecthealth_snapshot_progress_update($sid, 100);
   }
   else if($is_comments_last_page){
-    if (!$is_issues_last_page AND $issue_pager_max) {
+    if ($issue_pager_max) {
       projecthealth_snapshot_progress_update($sid, (int)(100 * $issue_page/$issue_pager_max));
     }
   }
