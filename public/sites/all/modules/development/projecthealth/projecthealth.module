@@ -11,16 +11,6 @@ define('PROJECTHEALTH_DEFAULT_START_TIME', '0');
 define('PROJECTHEALTH_DEFAULT_END_TIME', '1800000000');
 
 /**
- * Implements hook_form_alter().
- */
-function projecthealth_form_project_node_form_alter(&$form, &$form_state) {
-  $form['title'] = array(
-    '#value' => t('Project details not available yet.'),
-  );
-  $form['body']['#access'] = FALSE;
-}
-
-/**
  * Implements hook_menu().
  */
 function projecthealth_menu() {
@@ -368,31 +358,6 @@ function projecthealth_cron_queue_info() {
 /**
  * Given issue node id, process all comments under the node.
  */
-function projecthealth_snapshot_process_issues($data) {
-  $project = $data['project'];
-  $sid = $data['sid'];
-  $pid = $data['pid'];
-
-  $comment_data = $data;
-
-  $page = 0;
-  while (TRUE) {
-    $result = drupalorg_api_get_issues($project, $page);
-    foreach ($result->list as $issue) {
-      projecthealth_issue_create($sid, $pid, $issue);
-      $comment_data['issue'] = $issue;
-      projecthealth_snapshot_process_comments($comment_data);
-    }
-    if (empty($result->next)) {
-      break;
-    }
-    $page++;
-  }
-}
-
-/**
- * Given issue node id, process all comments under the node.
- */
 function projecthealth_snapshot_process_issues_per_page($data) {
 
   $project = $data['project'];
@@ -419,28 +384,6 @@ function projecthealth_snapshot_process_issues_per_page($data) {
 
   if (!$is_issues_last_page AND $issue_pager_max) {
     projecthealth_snapshot_progress_update($sid, (int)($page/$issue_pager_max));
-  }
-}
-
-/**
- * Given issue node id, process all comments under the node.
- */
-function projecthealth_snapshot_process_comments($data) {
-  $issue = $data['issue'];
-  $project = $data['project'];
-  $sid = $data['sid'];
-  $pid = $data['pid'];
-
-  $page = 0;
-  while (TRUE) {
-    $result = drupalorg_api_get_comments($issue, $page);
-    foreach ($result->list as $comment) {
-      projecthealth_comment_create($sid, $pid, $issue, $comment);
-    }
-    if (empty($result->next)) {
-      break;
-    }
-    $page++;
   }
 }
 
