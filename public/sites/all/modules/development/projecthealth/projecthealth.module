@@ -124,7 +124,7 @@ function projecthealth_form_validate($form, &$form_state) {
 /**
  * Submit handler for projecthealth_form().
  */
-function projecthealth_form_submit($form, $form_state) {
+function projecthealth_form_submit($form, &$form_state) {
   $values = $form_state['values'];
   // Create a snapshot id for current status calculation.
   $sid = projecthealth_snapshot_create($values['snapshot']);
@@ -136,11 +136,66 @@ function projecthealth_form_submit($form, $form_state) {
   $data['project'] = $project;
 
   projecthealth_snapshot_process_maintainers($data);
-  projecthealth_snapshot_process_issues($data);
-
-  drupal_goto("projecthealth/view/$pid/$sid");
+  // projecthealth_snapshot_process_issues($data);
+  // @todo either use Drupal queue or batch api.
+  // Step 1: Obtain all the pages for issue
+  $pager_max = _projecthealth_get_issues_pager_max($data);
+  $data['pager_max'] = $pager_max;
+  for ($page=0; $page <= $pager_max; $page++) {
+    $operations[] = array(
+      'projecthealth_snapshot_process_issues_per_page',
+      array(
+        $data,
+        $page,
+      ),
+    );
+  }
+  $batch = array(
+    'title' => t('Exporting'),
+    'operations' => $operations,
+    'finished' => 'projecthealth_snapshot_create_batch_finish',
+  );
+  $form_state['redirect'] = "projecthealth/view/{$project->field_project_machine_name}/$sid";
+  batch_set($batch);
 }
 
+/**
+ * Finished callback for issues import batch.
+ */
+function projecthealth_snapshot_create_batch_finish($success, $results, $operations) {
+  // The 'success' parameter means no fatal PHP errors were detected. All
+  // other error management should be handled using 'results'.
+  if ($success) {
+    $message = format_plural(count($results), 'One page processed.', '@count pages processed.');
+  }
+  else {
+    $message = t('Finished with an error.');
+  }
+  drupal_set_message($message);
+}
+
+
+/**
+ * Get number of issue pages for a project.
+ */
+function _projecthealth_get_issues_pager_max($data) {
+  $project = $data['project'];
+  $sid = $data['sid'];
+  $pid = $data['pid'];
+  $result = drupalorg_api_get_issues($project, 0);
+  if (empty($result->last)) {
+    return 0;
+  }
+  return _projecthealth_get_page_number($result->last);
+}
+
+/**
+ * Helper function to get 'page' query parameter in a url.
+ */
+function _projecthealth_get_page_number($url) {
+  parse_str($url);
+  return isset($page) ? $page : 0;
+}
 
 /**
  * List available Projects.
@@ -346,6 +401,36 @@ function projecthealth_snapshot_process_issues($data) {
       break;
     }
     $page++;
+  }
+}
+
+/**
+ * Given issue node id, process all comments under the node.
+ */
+function projecthealth_snapshot_process_issues_per_page($data, $page = 0, &$context) {
+  if (empty($context['sandbox'])) {
+    $context['sandbox']['progress'] = 0;
+    $context['sandbox']['max'] = $data['pager_max'];
+  }
+  $context['sandbox']['current'] = $page;
+  $context['message'] = check_plain($page);
+
+  $project = $data['project'];
+  $sid = $data['sid'];
+  $pid = $data['pid'];
+
+  $comment_data = $data;
+
+  $result = drupalorg_api_get_issues($project, $page);
+  foreach ($result->list as $issue) {
+    projecthealth_issue_create($sid, $pid, $issue);
+    $comment_data['issue'] = $issue;
+    projecthealth_snapshot_process_comments($comment_data);
+    $context['results'][] = $issue->nid . ' : ' . check_plain($issue->title);
+    $context['message'] = check_plain($issue->title);
+  }
+  if ($context['sandbox']['progress'] < $context['sandbox']['max']) {
+    $context['finished'] = $context['sandbox']['progress'] / $context['sandbox']['max'];
   }
 }
 
