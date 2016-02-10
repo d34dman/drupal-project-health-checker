@@ -7,8 +7,8 @@
 
 define('PROJECTHEALTH_DEFAULT_START_TIME', '0');
 
-// 1800000000 is 2027-01-15 08:00:00
-define('PROJECTHEALTH_DEFAULT_END_TIME', '1800000000');
+define('PROJECTHEALTH_DEFAULT_END_TIME', strtotime('20270115 08:00:00'));
+define('PROJECTHEALTH_DEFAULT_LATEST_DATE_BEGIN', strtotime('20151201 00:00:00'));
 
 module_load_include('inc', 'projecthealth', 'projecthealth.lookup');
 module_load_include('inc', 'projecthealth', 'projecthealth.data');
@@ -307,8 +307,12 @@ function projecthealth_view_snapshot($project_name, $sid) {
     'sid' => $sid,
     'pid' => $pid,
   );
-  $data += projecthealth_generate_report_data($pid, $sid);
-  drupal_set_title(check_plain($data['project']->data->title));
+
+  $data['total'] = projecthealth_generate_report_data($pid, $sid, PROJECTHEALTH_DEFAULT_START_TIME, PROJECTHEALTH_DEFAULT_END_TIME);
+  $data['current'] = projecthealth_generate_report_data($pid, $sid, strtotime('-1 month', $data['total']['snapshot']->created), PROJECTHEALTH_DEFAULT_END_TIME);
+
+  drupal_set_title(check_plain($data['total']['project']->data->title));
+  dpm($data);
   return theme('projecthealth_snapshot', $data);
 }
 

@@ -8,9 +8,7 @@
 /**
  * Function to generate report data for project snapshot.
  */
-function projecthealth_generate_report_data($pid, $sid) {
-  $start = isset($_GET['start']) ? strtotime($_GET['start']) : PROJECTHEALTH_DEFAULT_START_TIME;
-  $end = isset($_GET['end']) ? strtotime($_GET['end']) : PROJECTHEALTH_DEFAULT_END_TIME;
+function projecthealth_generate_report_data($pid, $sid, $start = PROJECTHEALTH_DEFAULT_START_TIME, $end = PROJECTHEALTH_DEFAULT_END_TIME) {
 
   // @todo: implement caching.
   $project = db_query("SELECT * from {projecthealth_project} WHERE id = :pid LIMIT 1", array(":pid" => $pid))->fetchObject();
@@ -26,7 +24,9 @@ function projecthealth_generate_report_data($pid, $sid) {
     'issues' => projecthealth_generate_issue_report($pid, $sid, $start, $end),
     'comments' => projecthealth_generate_comment_report($pid, $sid, $start, $end),
     'users' => projecthealth_generate_user_report($pid, $sid, $start, $end),
+    'users_map' => projecthealth_generate_country_report($pid, $sid, $start, $end),
   );
+  dpm($data);
   return $data;
 }
 
@@ -137,4 +137,50 @@ function projecthealth_generate_user_report($pid, $sid, $start, $end) {
     }
   }
   return $users;
+}
+/**
+ * Issue report.
+ */
+function projecthealth_generate_country_report($pid, $sid, $start, $end) {
+  $stats = array();
+
+  $result = db_query('SELECT count(pu.uid) as count, pu.country_code
+    FROM {projecthealth_user} as pu
+    WHERE pu.pid = :pid AND pu.country_code <> \'\'
+    GROUP BY pu.country_code
+    ORDER BY count DESC',
+    array(
+      ':pid' => $pid,
+    )
+  );
+  $is_max = TRUE;
+  foreach ($result as $record) {
+    $record->fillKey = _projecthealth_get_color_key($record->count, $is_max);
+    $stats[$record->country_code] = $record;
+    $is_max = FALSE;
+  }
+  return $stats;
+}
+
+/**
+ * Helper function to create color coded keys.
+ */
+function _projecthealth_get_color_key($value, $is_max = FALSE) {
+  static $max_val;
+  $max_val = $is_max ? $value : $max_val;
+
+  $ratio = 100 * $value / $max_val;
+  if ($ratio > 75) {
+    return 'HIGHEST';
+  }
+  else if($ratio > 50){
+    return 'HIGH';
+  }
+  else if($ratio > 25) {
+    return 'LOW';
+  }
+  else {
+    return 'LOWEST';
+  }
+
 }

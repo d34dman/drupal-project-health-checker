@@ -5,12 +5,12 @@
         <span class="info-box-icon"><i class="fa fa-info"></i></span>
         <div class="info-box-content">
           <span class="info-box-text">Index status</span>
-          <span class="info-box-number"><?php echo $snapshot->progress; ?>%</span>
+          <span class="info-box-number"><?php echo $total['snapshot']->progress; ?>%</span>
           <div class="progress">
-            <div class="progress-bar" style="width: <?php echo $snapshot->progress; ?>%"></div>
+            <div class="progress-bar" style="width: <?php echo $total['snapshot']->progress; ?>%"></div>
           </div>
           <span class="progress-description">
-            <?php echo format_date($snapshot->created); ?>
+            <?php echo format_date($total['snapshot']->created); ?>
           </span>
         </div>
       </div>
@@ -20,7 +20,7 @@
         <span class="info-box-icon "><i class="fa fa-download"></i></span>
         <div class="info-box-content">
           <span class="info-box-text">Downloads</span>
-          <span class="info-box-number"><?php echo $project->downloads; ?></span>
+          <span class="info-box-number"><?php echo $total['project']->downloads; ?></span>
         </div>
         <!-- /.info-box-content -->
       </div>
@@ -30,12 +30,12 @@
         <span class="info-box-icon"><i class="fa fa-comments-o"></i></span>
         <div class="info-box-content">
           <span class="info-box-text">Comments</span>
-          <span class="info-box-number"><?php echo $comments->totalCount; ?></span>
+          <span class="info-box-number"><?php echo $total['comments']->totalCount; ?></span>
           <div class="progress">
-            <div class="progress-bar" style="width: 70%"></div>
+            <div class="progress-bar" style="width: <?php echo ($current['comments']->totalCount /($total['comments']->totalCount)); ?>%"></div>
           </div>
           <span class="progress-description">
-            70% Increase in 30 Days
+            <?php echo $current['comments']->totalCount; ?> new comments
           </span>
         </div>
       </div>
@@ -45,12 +45,12 @@
         <span class="info-box-icon"><i class="fa fa-star-o"></i></span>
         <div class="info-box-content">
           <span class="info-box-text">Issues</span>
-          <span class="info-box-number"><?php echo $issues->totalCount ?></span>
+          <span class="info-box-number"><?php echo $total['issues']->totalCount ?></span>
           <div class="progress">
-            <div class="progress-bar" style="width: <?php echo ($issues->totalCount) ? ($issues->closedCount * 100 / $issues->totalCount) : 0; ?>%"></div>
+            <div class="progress-bar" style="width: <?php echo ($total['issues']->totalCount) ? ($total['issues']->closedCount * 100 / $total['issues']->totalCount) : 0; ?>%"></div>
           </div>
           <span class="progress-description">
-            <?php echo $issues->openCount ?> open issues
+            <?php echo $total['issues']->openCount ?> open issues
           </span>
         </div>
       </div>
@@ -151,13 +151,13 @@
       <!-- small box -->
       <div class="small-box bg-red">
         <div class="inner">
-          <h3><?php echo $issues->openCount; ?></h3>
+          <h3><?php echo $total['issues']->openCount; ?></h3>
           <p>Open Issues</p>
         </div>
         <div class="icon">
           <i class="ion ion-pie-graph"></i>
         </div>
-        <a href="https://www.drupal.org/project/issues/<?php echo $project->data->field_project_machine_name; ?>" target="_blank" class="small-box-footer">
+        <a href="https://www.drupal.org/project/issues/<?php echo $total['project']->data->field_project_machine_name; ?>" target="_blank" class="small-box-footer">
           More info <i class="fa fa-arrow-circle-right"></i>
         </a>
       </div>
@@ -171,35 +171,29 @@
 <script src="/sites/all/modules/development/projecthealth/js/datamaps.world.min.js"></script>
 <script>
 var map = new Datamap({
-element: document.getElementById('map-container'),
-fills: {
-HIGH: '#aaaaff',
-LOW: '#efefff',
-MEDIUM: '#cdcdff',
-UNKNOWN: 'rgb(0,0,0)',
-defaultFill: '#ffffff'
-},
-data: {
-IND: {
-fillKey: 'LOW',
-numberOfThings: 2002
-},
-USA: {
-fillKey: 'MEDIUM',
-numberOfThings: 10381
-},
-AUS: {
-fillKey: 'HIGH',
-numberOfThings: 10
-}
-},
-geographyConfig: {
-popupTemplate: function(geo, data) {
-return ['<div class="hoverinfo"><strong>',
-  'Number of things in ' + geo.properties.name,
-  ': ' + data.numberOfThings,
-'</strong></div>'].join('');
-}
-}
-});
+  element: document.getElementById('map-container'),
+    fills: {
+      HIGHEST: '#0678be',
+      HIGH: '#129FF8',
+      LOW: '#39AFF9',
+      LOWEST: '#74C7FB',
+      defaultFill: '#FFFFFF'
+    },
+
+    data: <?php echo json_encode($total['users_map']); ?>,
+    geographyConfig: {
+      // don't change color on mouse hover
+      highlightFillColor: function(geo) {
+        return geo['fillKey'] || '#FFFFFF';
+      },
+      popupTemplate: function(geo, data) {
+        // don't show tooltip if country don't present in dataset
+        if (!data) { return ; }
+        return ['<div class="hoverinfo bg-yellow">',
+          '<strong>', geo.properties.name, '</strong>',
+          '<br>Users: <strong>', data.count, '</strong>',
+          '</div>'].join('');
+      }
+    }
+  });
 </script>
