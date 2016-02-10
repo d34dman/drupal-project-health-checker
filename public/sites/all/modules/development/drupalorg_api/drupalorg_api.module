@@ -32,7 +32,7 @@ function drupalorg_api_call($url, $reset = FALSE) {
         cache_set($url, $drupalorg_api_response[$url], 'cache_drupalorg_api');
       }
       catch (DrupalorgApiException $e) {
-        watchdog('drupalorg_api', $e->getMessage(), WATCHDOG_ERROR);
+        watchdog('drupalorg_api', $e->getMessage(), array(), WATCHDOG_ERROR);
       }
     }
   }
