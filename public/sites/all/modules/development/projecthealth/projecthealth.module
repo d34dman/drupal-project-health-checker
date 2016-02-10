@@ -168,7 +168,7 @@ function _projecthealth_get_comments_pager_max($data) {
   $issue = $data['issue'];
   $sid = $data['sid'];
   $pid = $data['pid'];
-  $result = drupalorg_api_get_comments($issue, $page);
+  $result = drupalorg_api_get_comments($issue, 0);
   if (empty($result->last)) {
     return 0;
   }
@@ -355,11 +355,11 @@ function projecthealth_permission() {
  */
 function projecthealth_cron_queue_info() {
   $queues['projectHealthIssuesIndex'] = array(
-    'worker callback' => 'projecthealth_snapshot_process_issues',
+    'worker callback' => 'projecthealth_snapshot_process_issues_per_page',
     'time' => 30,
   );
   $queues['projectHealthCommentsIndex'] = array(
-    'worker callback' => 'projecthealth_snapshot_process_comments',
+    'worker callback' => 'projecthealth_snapshot_process_comments_per_page',
     'time' => 30,
   );
   return $queues;
@@ -399,8 +399,10 @@ function projecthealth_snapshot_process_issues_per_page($data) {
   $sid = $data['sid'];
   $pid = $data['pid'];
   $page = $data['page'];
-
+  $issue_pager_max = $data['pager_max'];
   $comment_data = $data;
+  $comment_data['pager_max'] = 0;
+  $is_issues_last_page = $comment_data['is_issues_last_page'] = ($page == $issue_pager_max);
 
   $result = drupalorg_api_get_issues($project, $page);
   $queue = DrupalQueue::get('projectHealthCommentsIndex');
@@ -408,10 +410,15 @@ function projecthealth_snapshot_process_issues_per_page($data) {
     projecthealth_issue_create($sid, $pid, $issue);
     $comment_data['issue'] = $issue;
     $pager_max = _projecthealth_get_comments_pager_max($comment_data);
+    $comment_data['pager_max'] = $pager_max;
     for ($page=0; $page <= $pager_max; $page++) {
       $comment_data['page'] = $page;
       $queue->createItem($comment_data);
     }
+  }
+
+  if (!$is_issues_last_page AND $issue_pager_max) {
+    projecthealth_snapshot_progress_update($sid, (int)($page/$issue_pager_max));
   }
 }
 
@@ -446,10 +453,15 @@ function projecthealth_snapshot_process_comments_per_page($data) {
   $sid = $data['sid'];
   $pid = $data['pid'];
   $page = $data['page'];
-
+  $pager_max = $data['pager_max'];
+  $is_issues_last_page = $data['is_issues_last_page'];
+  $is_comments_last_page = ($page == $pager_max);
   $result = drupalorg_api_get_comments($issue, $page);
   foreach ($result->list as $comment) {
     projecthealth_comment_create($sid, $pid, $issue, $comment);
+  }
+  if ($is_issues_last_page AND $is_comments_last_page) {
+    projecthealth_snapshot_progress_update($sid, 100);
   }
 }
 
@@ -695,4 +707,18 @@ function projecthealth_user_update($pid, $do_uid, $activity_time) {
         ->execute();
     }
   }
+}
+
+
+/**
+ * Update snapshot index progress
+ */
+function projecthealth_snapshot_progress_update($sid, $progress) {
+  $fields = array(
+    'progress' => $progress,
+  );
+  db_update('projecthealth_snapshot')
+    ->fields($fields)
+    ->condition('id', $sid)
+    ->execute();
 }
