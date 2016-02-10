@@ -41,7 +41,7 @@
           <span class="info-box-text">Issues</span>
           <span class="info-box-number"><?php echo $issues->totalCount ?></span>
           <div class="progress">
-            <div class="progress-bar" style="width: <?php echo ($issues->closedCount * 100 / $issues->totalCount); ?>%"></div>
+            <div class="progress-bar" style="width: <?php echo ($issues->totalCount) ? ($issues->closedCount * 100 / $issues->totalCount) : 0; ?>%"></div>
           </div>
           <span class="progress-description">
             <?php echo $issues->openCount ?> open issues
