@@ -590,13 +590,13 @@ function projecthealth_comment_create($sid, $pid, $issue, $comment) {
     'issue_id' => $issue->nid,
   );
 
-  $issue_id = db_insert('projecthealth_comment')
+  $comment_id = db_insert('projecthealth_comment')
     ->fields($fields)
     ->execute();
 
-  projecthealth_user_update($pid, $issue->author->id, $issue->created);
+  projecthealth_user_update($pid, $comment->author->id, $comment->created);
 
-  return $issue_id;
+  return $comment_id;
 }
 
 /**
