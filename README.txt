@@ -3,7 +3,7 @@ I. INSTALLATION
     1. Checkout the repo and run following commands.
       >>fab config:mbb docker:run
       >>fab config:mbb install
-      >>fab config:mbb reset
+      >>fab config:mbb deploy
   2. Manual
     1. Install Drupal which can be found in public folder in the root of the repo.
     2. Enable dcasia16projecthealth_deploy module.
