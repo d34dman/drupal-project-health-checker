@@ -132,7 +132,7 @@ function projecthealth_form_submit($form, &$form_state) {
   $pager_max = _projecthealth_get_issues_pager_max($data);
   $data['pager_max'] = $pager_max;
   $queue = DrupalQueue::get('projectHealthIssuesIndex');
-  for ($page=0; $page <= $pager_max; $page++) {
+  for ($page = 0; $page <= $pager_max; $page++) {
     $data['page'] = $page;
     $queue->createItem($data);
   }
@@ -296,22 +296,36 @@ function projecthealth_list_project_snapshots($project_machine_name) {
  */
 function projecthealth_view_snapshot($project_name, $sid) {
 
-  $pid = db_query('SELECT id FROM {projecthealth_project} WHERE name = :project_name AND sid = :sid',
+  $project = db_query('SELECT * FROM {projecthealth_project} WHERE name = :project_name AND sid = :sid',
     array(
       ':project_name' => $project_name,
       ':sid' => $sid,
     )
-  )->fetchField();
-
-  $data = array(
-    'sid' => $sid,
-    'pid' => $pid,
-  );
-
-  $data['total'] = projecthealth_generate_report_data($pid, $sid, PROJECTHEALTH_DEFAULT_START_TIME, PROJECTHEALTH_DEFAULT_END_TIME);
-  $data['current'] = projecthealth_generate_report_data($pid, $sid, strtotime('-1 month', $data['total']['snapshot']->created), PROJECTHEALTH_DEFAULT_END_TIME);
-
+  )->fetchObject();
+  $project->data = unserialize($project->data);
   drupal_set_title(check_plain($data['total']['project']->data->title));
+
+  $snapshot = db_query("SELECT * from {projecthealth_snapshot} WHERE id = :sid LIMIT 1", array(":sid" => $sid))->fetchObject();
+  // Bail out early if snapshot is not complete.
+  if ($snapshot->progress < 100) {
+    return theme('projecthealth_snapshot_incomplete', $snapshot);
+  }
+
+  $sections = array(
+    'total' => array(
+      'start' => PROJECTHEALTH_DEFAULT_START_TIME,
+      'end' => PROJECTHEALTH_DEFAULT_END_TIME,
+    ),
+    'current' => array(
+      'start' => strtotime('20151201'),
+      'end' => PROJECTHEALTH_DEFAULT_END_TIME,
+    ),
+  );
+  $data = array();
+  foreach ($sections as $key => $value) {
+    $snapshot = projecthealth_generate_report_data($pid, $sid, $section['start'], $section['end']);
+    $data[$key] = $snapshot;
+  }
   return theme('projecthealth_snapshot', $data);
 }
 
@@ -323,6 +337,11 @@ function projecthealth_theme($existing, $type, $theme, $path) {
     'projecthealth_snapshot' => array(
       'render element' => 'element',
       'template' => 'projecthealth.snapshot',
+      'variables' => array('data' => array()),
+    ),
+    'projecthealth_snapshot_incomplete' => array(
+      'render element' => 'element',
+      'template' => 'projecthealth.snapshot.incomplete',
       'variables' => array('data' => array()),
     ),
   );
@@ -382,7 +401,7 @@ function projecthealth_snapshot_process_issues_per_page($data) {
     $comment_data['issue'] = $issue;
     $pager_max = _projecthealth_get_comments_pager_max($comment_data);
     $comment_data['pager_max'] = $pager_max;
-    for ($page=0; $page <= $pager_max; $page++) {
+    for ($page = 0; $page <= $pager_max; $page++) {
       $comment_data['page'] = $page;
       $queue->createItem($comment_data);
     }
@@ -410,10 +429,8 @@ function projecthealth_snapshot_process_comments_per_page($data) {
   if ($is_issues_last_page AND $is_comments_last_page) {
     projecthealth_snapshot_progress_update($sid, 100);
   }
-  else if($is_comments_last_page){
-    if ($issue_pager_max) {
-      projecthealth_snapshot_progress_update($sid, (int)(100 * $issue_page/$issue_pager_max));
-    }
+  elseif ($is_comments_last_page AND $issue_pager_max) {
+    projecthealth_snapshot_progress_update($sid, (int) (100 * $issue_page / $issue_pager_max));
   }
 }
 
@@ -665,7 +682,7 @@ function projecthealth_user_update($pid, $do_uid, $activity_time) {
 
 
 /**
- * Update snapshot index progress
+ * Update snapshot index progress.
  */
 function projecthealth_snapshot_progress_update($sid, $progress) {
   $fields = array(
