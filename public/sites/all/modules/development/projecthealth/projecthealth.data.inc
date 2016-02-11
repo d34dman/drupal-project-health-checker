@@ -8,13 +8,18 @@
 /**
  * Function to generate report data for project snapshot.
  */
-function projecthealth_generate_report_data($pid, $sid, $start = PROJECTHEALTH_DEFAULT_START_TIME, $end = PROJECTHEALTH_DEFAULT_END_TIME) {
-
+function projecthealth_generate_report_data($project, $snapshot, $start = PROJECTHEALTH_DEFAULT_START_TIME, $end = PROJECTHEALTH_DEFAULT_END_TIME, $reset = FALSE) {
   // @todo: implement caching.
-  $project = db_query("SELECT * from {projecthealth_project} WHERE id = :pid LIMIT 1", array(":pid" => $pid))->fetchObject();
-  $project->data = unserialize($project->data);
-  $snapshot = db_query("SELECT * from {projecthealth_snapshot} WHERE id = :sid LIMIT 1", array(":sid" => $sid))->fetchObject();
+  $snapshot_ready = ($snapshot->progress == 100);
+  if (!$snapshot_ready) {
+    return projecthealth_generate_temporary_snapshot_data($project, $snapshot);
+  }
+  $cid = "$pid:$sid:$snapshot_ready:$start:$end";
+  if (!$reset AND $cache = cache_get($cid)) {
+    return $cache->data;
+  }
   $data = array(
+    'progress' => $snapshot->progress,
     'start' => $start,
     'start_date' => date('Y-m-d H:i:s', $start),
     'end' => $end,
@@ -26,7 +31,19 @@ function projecthealth_generate_report_data($pid, $sid, $start = PROJECTHEALTH_D
     'users' => projecthealth_generate_user_report($pid, $sid, $start, $end),
     'users_map' => projecthealth_generate_country_report($pid, $sid, $start, $end),
   );
+  cache_set($cid, $data);
   return $data;
+}
+
+/**
+ * Send data for snapshot indexing in progress.
+ */
+function projecthealth_generate_temporary_snapshot_data($project, $snapshot){
+  return array(
+    'progress' => $snapshot->progress,
+    'project' => $project,
+    'snapshot' => $snapshot,
+  );
 }
 
 /**
