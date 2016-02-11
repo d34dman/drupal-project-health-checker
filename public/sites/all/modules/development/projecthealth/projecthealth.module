@@ -303,7 +303,7 @@ function projecthealth_view_snapshot($project_name, $sid) {
     )
   )->fetchObject();
   $project->data = unserialize($project->data);
-  drupal_set_title(check_plain($data['total']['project']->data->title));
+  drupal_set_title(check_plain($project->data->title));
 
   $snapshot = db_query("SELECT * from {projecthealth_snapshot} WHERE id = :sid LIMIT 1", array(":sid" => $sid))->fetchObject();
   // Bail out early if snapshot is not complete.
@@ -323,7 +323,7 @@ function projecthealth_view_snapshot($project_name, $sid) {
   );
   $data = array();
   foreach ($sections as $key => $value) {
-    $snapshot = projecthealth_generate_report_data($pid, $sid, $section['start'], $section['end']);
+    $snapshot = projecthealth_generate_report_data($project, $snapshot, $section['start'], $section['end']);
     $data[$key] = $snapshot;
   }
   return theme('projecthealth_snapshot', $data);
