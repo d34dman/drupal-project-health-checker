@@ -322,8 +322,11 @@ function projecthealth_view_snapshot($project_name, $sid) {
     ),
   );
   $data = array();
+
+  $secret_reset_key = variable_get('projecthealth_secret_reset_key', 'reset');
+  $reset = isset($_GET[$secret_reset_key]) ? $_GET[$secret_reset_key] : FALSE;
   foreach ($sections as $key => $section) {
-    $snapshot_data = projecthealth_generate_report_data($project, $snapshot, $section['start'], $section['end']);
+    $snapshot_data = projecthealth_generate_report_data($project, $snapshot, $section['start'], $section['end'], $reset);
     $data[$key] = $snapshot_data;
   }
   return theme('projecthealth_snapshot', $data);
