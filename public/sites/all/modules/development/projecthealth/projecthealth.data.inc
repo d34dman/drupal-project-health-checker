@@ -14,7 +14,9 @@ function projecthealth_generate_report_data($project, $snapshot, $start = PROJEC
   if (!$snapshot_ready) {
     return projecthealth_generate_temporary_snapshot_data($project, $snapshot);
   }
-  $cid = "$project->id:$snapshot->id:$snapshot_ready:$start:$end";
+  $pid = $project->id;
+  $sid = $snapshot->id;
+  $cid = "$pid:$sid:$snapshot_ready:$start:$end";
   if (!$reset AND $cache = cache_get($cid)) {
     return $cache->data;
   }
