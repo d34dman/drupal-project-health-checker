@@ -322,7 +322,7 @@ function projecthealth_view_snapshot($project_name, $sid) {
     ),
   );
   $data = array();
-  foreach ($sections as $key => $value) {
+  foreach ($sections as $key => $section) {
     $snapshot = projecthealth_generate_report_data($project, $snapshot, $section['start'], $section['end']);
     $data[$key] = $snapshot;
   }
