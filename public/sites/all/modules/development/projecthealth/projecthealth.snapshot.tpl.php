@@ -32,7 +32,9 @@
           <span class="info-box-text">Comments</span>
           <span class="info-box-number"><?php echo $total['comments']->totalCount; ?></span>
           <div class="progress">
-            <div class="progress-bar" style="width: <?php echo ($current['comments']->totalCount /($total['comments']->totalCount)); ?>%"></div>
+            <?php if ($total['comments']->totalCount): ?>
+              <div class="progress-bar" style="width: <?php echo ($current['comments']->totalCount /($total['comments']->totalCount)); ?>%"></div>
+            <?php endif ?>
           </div>
           <span class="progress-description">
             <?php echo $current['comments']->totalCount; ?> new comments
