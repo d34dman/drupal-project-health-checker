@@ -193,9 +193,9 @@ var map = new Datamap({
         if (!data) { return ; }
         return ['<div class="hoverinfo bg-yellow">',
           '<strong>', geo.properties.name, '</strong>',
+          '&nbps;&nbsp;(<i>', data.totalCount, '</i>)',
           '<br>Issues: <strong>', data.issuesCount, '</strong>',
           '<br>Comments: <strong>', data.commentsCount, '</strong>',
-          '<br>Total: <strong>', data.totalCount, '</strong>',
           '</div>'].join('');
       }
     }
