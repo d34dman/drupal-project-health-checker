@@ -141,7 +141,7 @@ function projecthealth_generate_user_report($pid, $sid, $start, $end) {
 function projecthealth_generate_country_report($pid, $sid, $start, $end) {
   $stats = array();
 
-  $result = db_query('SELECT pu.country_code , SUM(userStats.comments) as commentsCount, SUM(userStats.issues) as issuesCount, SUM(userStats.total) as totalCount
+  $result = db_query('SELECT DISTINCT(pu.name), pu.country_code , SUM(userStats.comments) as commentsCount, SUM(userStats.issues) as issuesCount, SUM(userStats.total) as totalCount
 
     FROM {projecthealth_user} as pu
 
@@ -164,7 +164,8 @@ function projecthealth_generate_country_report($pid, $sid, $start, $end) {
 
     WHERE phu.pid = :pid) as userStats ON pu.name = userStats.phuname
     WHERE pu.pid = :pid
-    GROUP BY pu.country_code',
+    GROUP BY pu.country_code
+    ORDER BY pu.totalCount DESC',
     array(
       ':pid' => $pid,
     )
