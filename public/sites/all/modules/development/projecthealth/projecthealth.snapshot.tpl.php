@@ -182,7 +182,7 @@ var map = new Datamap({
       defaultFill: '#FFFFFF'
     },
 
-    data: <?php echo json_encode($total['users_map']); ?>,
+    data: <?php echo json_encode($total['world_stats']); ?>,
     geographyConfig: {
       // don't change color on mouse hover
       highlightFillColor: function(geo) {

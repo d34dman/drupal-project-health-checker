@@ -31,7 +31,7 @@ function projecthealth_generate_report_data($project, $snapshot, $start = PROJEC
     'issues' => projecthealth_generate_issue_report($pid, $sid, $start, $end),
     'comments' => projecthealth_generate_comment_report($pid, $sid, $start, $end),
     'users' => projecthealth_generate_user_report($pid, $sid, $start, $end),
-    'users_map' => projecthealth_generate_country_report($pid, $sid, $start, $end),
+    'world_stats' => projecthealth_generate_country_report($pid, $sid, $start, $end),
   );
   cache_set($cid, $data);
   return $data;
@@ -111,48 +111,27 @@ function projecthealth_generate_comment_report($pid, $sid, $start, $end) {
 function projecthealth_generate_user_report($pid, $sid, $start, $end) {
   $users = array();
 
-  $result = db_query('SELECT *
-    FROM {projecthealth_user} as pu
-    WHERE pu.pid = :pid', array(':pid' => $pid)
+  $result = db_query('SELECT phu.name as name, phu.country_code as country_code, phu.uid as uid, ifnull(tpi.count,0) as issues, ifnull(tpc.count,0) as comments, (ifnull(tpc.count,0) + ifnull(tpi.count,0)) as total
+
+    FROM {projecthealth_user} as phu
+
+    LEFT JOIN (SELECT COUNT(pi.issue_id) AS count, pi.uid as issue_uid
+    FROM {projecthealth_issue} AS pi
+    WHERE pi.pid = :pid
+    GROUP BY pi.uid
+    ) as tpi ON phu.uid = tpi.issue_uid
+
+    LEFT JOIN (SELECT COUNT(pc.id) AS count, pc.uid as issue_uid
+    FROM {projecthealth_comment} AS pc
+    WHERE pc.pid = :pid
+    GROUP BY pc.uid
+    ) as tpc ON phu.uid = tpc.issue_uid
+
+    WHERE phu.pid = :pid', array(':pid' => $pid)
   );
   foreach ($result as $record) {
-    $record->data = unserialize($record->data);
-    $record->data->country = projecthealth_get_country_codes($record->data->field_country);
+    $record->country = projecthealth_get_country_codes($record->country_code);
     $users[$record->uid] = $record;
-    $users[$record->uid]->issueCount = '0';
-    $users[$record->uid]->commentCount = '0';
-  }
-
-  $result = db_query('SELECT pu.uid, pu.name, COUNT(pi.id) as issueCount
-    FROM {projecthealth_user} as pu
-    LEFT JOIN {projecthealth_issue} as pi ON pu.uid = pi.uid
-    WHERE pu.pid = :pid AND pi.created >= :start AND pi.created < :end
-    GROUP BY pu.uid ORDER BY issueCount DESC',
-    array(
-      ':pid' => $pid,
-      ':start' => $start,
-      ':end' => $end,
-    )
-  );
-  foreach ($result as $record) {
-    $users[$record->uid]->issueCount = $record->issueCount;
-  }
-
-  $result = db_query('SELECT pu.uid, pu.name, COUNT(pc.id) as commentCount
-    FROM {projecthealth_user} as pu
-    LEFT JOIN {projecthealth_comment} as pc ON pu.uid = pc.uid
-    WHERE pu.pid = :pid AND pc.created >= :start AND pc.created < :end
-    GROUP BY pu.uid ORDER BY commentCount DESC',
-    array(
-      ':pid' => $pid,
-      ':start' => $start,
-      ':end' => $end,
-    )
-  );
-  foreach ($result as $record) {
-    if (isset($users[$record->uid])) {
-      $users[$record->uid]->commentCount = $record->commentCount;
-    }
   }
   return $users;
 }
@@ -162,18 +141,37 @@ function projecthealth_generate_user_report($pid, $sid, $start, $end) {
 function projecthealth_generate_country_report($pid, $sid, $start, $end) {
   $stats = array();
 
-  $result = db_query('SELECT count(pu.uid) as count, pu.country_code
+  $result = db_query('SELECT pu.country_code , SUM(userStats.comments) as commentsCount, SUM(userStats.issues) as issuesCount, SUM(userStats.total) as totalCount
+
     FROM {projecthealth_user} as pu
-    WHERE pu.pid = :pid AND pu.country_code <> \'\'
-    GROUP BY pu.country_code
-    ORDER BY count DESC',
+
+    LEFT JOIN
+
+    (SELECT phu.name as phuname, phu.country_code, phu.uid, ifnull(tpi.count,0) as issues, ifnull(tpc.count,0) as comments, (ifnull(tpc.count,0) + ifnull(tpi.count,0)) as total FROM {projecthealth_user} as phu
+
+    LEFT JOIN (SELECT COUNT(pi.issue_id) AS count, pi.uid as issue_uid
+    FROM {projecthealth_issue} AS pi
+    WHERE pi.pid = :pid
+    GROUP BY pi.uid
+    ) as tpi ON phu.uid = tpi.issue_uid
+
+    LEFT JOIN (SELECT COUNT(pc.id) AS count, pc.uid as issue_uid
+    FROM {projecthealth_comment} AS pc
+    WHERE pc.pid = :pid
+    GROUP BY pc.uid
+    ) as tpc ON phu.uid = tpc.issue_uid
+
+
+    WHERE phu.pid = :pid) as userStats ON pu.name = userStats.phuname
+    WHERE pu.pid = :pid
+    GROUP BY pu.country_code',
     array(
       ':pid' => $pid,
     )
   );
   $is_max = TRUE;
   foreach ($result as $record) {
-    $record->fillKey = _projecthealth_get_color_key($record->count, $is_max);
+    $record->fillKey = _projecthealth_get_color_key($record->totalCount, $is_max);
     $stats[$record->country_code] = $record;
     $is_max = FALSE;
   }
