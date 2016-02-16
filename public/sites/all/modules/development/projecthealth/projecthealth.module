@@ -304,7 +304,7 @@ function projecthealth_project_load($project_name) {
 }
 
 /**
- * Helper function in menu callback to load a project.
+ * Helper function in menu callback to load a snapshot.
  */
 function projecthealth_snapshot_load($sid) {
   $snapshot = db_query("SELECT * from {projecthealth_snapshot} WHERE id = :sid LIMIT 1", array(":sid" => $sid))->fetchObject();
