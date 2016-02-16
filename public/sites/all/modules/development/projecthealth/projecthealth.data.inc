@@ -141,13 +141,13 @@ function projecthealth_generate_user_report($pid, $sid, $start, $end) {
 function projecthealth_generate_country_report($pid, $sid, $start, $end) {
   $stats = array();
 
-  $result = db_query('SELECT DISTINCT(pu.name), pu.country_code , SUM(userStats.comments) as commentsCount, SUM(userStats.issues) as issuesCount, SUM(userStats.total) as totalCount
+  $result = db_query('SELECT DISTINCT(pu.name), pu.country_code , SUM(userStats.comments) as commentsCount, SUM(userStats.issues) as issuesCount, SUM(userStats.total) as totalCount, userStats.totalUsers as usersCount
 
     FROM {projecthealth_user} as pu
 
     LEFT JOIN
 
-    (SELECT phu.name as phuname, phu.country_code, phu.uid, ifnull(tpi.count,0) as issues, ifnull(tpc.count,0) as comments, (ifnull(tpc.count,0) + ifnull(tpi.count,0)) as total FROM {projecthealth_user} as phu
+    (SELECT phu.name as phuname, phu.country_code, phu.uid, ifnull(tpi.count,0) as issues, ifnull(tpc.count,0) as comments, (ifnull(tpc.count,0) + ifnull(tpi.count,0)) as total, tpu.totalUsers as totalUsers FROM {projecthealth_user} as phu
 
     LEFT JOIN (SELECT COUNT(pi.issue_id) AS count, pi.uid as issue_uid
     FROM {projecthealth_issue} AS pi
@@ -161,6 +161,12 @@ function projecthealth_generate_country_report($pid, $sid, $start, $end) {
     GROUP BY pc.uid
     ) as tpc ON phu.uid = tpc.issue_uid
 
+    LEFT JOIN(
+    SELECT u.country_code, count(u.id) as totalUsers
+    FROM projecthealth_user as u
+    WHERE u.pid = 2
+    GROUP BY u.country_code
+    ) as tpu ON phu.country_code = tpu.country_code
 
     WHERE phu.pid = :pid) as userStats ON pu.name = userStats.phuname
     WHERE pu.pid = :pid
@@ -170,34 +176,9 @@ function projecthealth_generate_country_report($pid, $sid, $start, $end) {
       ':pid' => $pid,
     )
   );
-  $is_max = TRUE;
   foreach ($result as $record) {
-    $record->fillKey = _projecthealth_get_color_key($record->totalCount, $is_max);
+    unset($record->name);
     $stats[$record->country_code] = $record;
-    $is_max = FALSE;
   }
   return $stats;
-}
-
-/**
- * Helper function to create color coded keys.
- */
-function _projecthealth_get_color_key($value, $is_max = FALSE) {
-  static $max_val;
-  $max_val = $is_max ? $value : $max_val;
-
-  $ratio = 100 * $value / $max_val;
-  if ($ratio > 75) {
-    return 'HIGHEST';
-  }
-  else if($ratio > 50){
-    return 'HIGH';
-  }
-  else if($ratio > 25) {
-    return 'LOW';
-  }
-  else {
-    return 'LOWEST';
-  }
-
 }
