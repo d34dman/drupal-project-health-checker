@@ -46,6 +46,7 @@ function projecthealth_menu() {
     'title' => 'Report',
     'page callback' => 'projecthealth_view_snapshot',
     'page arguments' => array(2, 3),
+    'load arguments' => array(3),
     'access arguments' => array('access content'),
     'type' => MENU_NORMAL_ITEM,
   );
@@ -53,6 +54,7 @@ function projecthealth_menu() {
   $items['projecthealth/data/%projecthealth_project/%projecthealth_snapshot'] = array(
     'page callback' => 'projecthealth_generate_report_data',
     'page arguments' => array(2, 3),
+    'load arguments' => array(3),
     'delivery callback' => 'drupal_json_output',
     'access arguments' => array('access content'),
     'type' => MENU_CALLBACK,
@@ -292,7 +294,7 @@ function projecthealth_list_project_snapshots($project_machine_name) {
 /**
  * Helper function in menu callback to load a project.
  */
-function projecthealth_project_load($project_name) {
+function projecthealth_project_load($project_name, $sid) {
   $project = db_query('SELECT * FROM {projecthealth_project} WHERE name = :project_name AND sid = :sid',
     array(
       ':project_name' => $project_name,
