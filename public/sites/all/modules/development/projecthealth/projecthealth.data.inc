@@ -111,7 +111,16 @@ function projecthealth_generate_comment_report($pid, $sid, $start, $end) {
 function projecthealth_generate_user_report($pid, $sid, $start, $end) {
   $users = array();
 
-  $result = db_query('SELECT phu.name as name, phu.country_code as country_code, phu.uid as uid, ifnull(tpi.count,0) as issues, ifnull(tpc.count,0) as comments, (ifnull(tpc.count,0) + ifnull(tpi.count,0)) as total
+  $result = db_query('SELECT
+      phu.name as name,
+      phu.country_code as country_code,
+      phu.uid as uid,
+      ifnull(tpi.count,0) as issues,
+      ifnull(tpc.count,0) as comments,
+      (ifnull(tpc.count,0) + ifnull(tpi.count,0)) as total,
+      phu.created as created,
+      phu.latest_activity as latest_activity,
+      phu.gender as gender
 
     FROM {projecthealth_user} as phu
 
@@ -130,7 +139,6 @@ function projecthealth_generate_user_report($pid, $sid, $start, $end) {
     WHERE phu.pid = :pid', array(':pid' => $pid)
   );
   foreach ($result as $record) {
-    $record->country = projecthealth_get_country_codes($record->country_code);
     $users[$record->uid] = $record;
   }
   return $users;
