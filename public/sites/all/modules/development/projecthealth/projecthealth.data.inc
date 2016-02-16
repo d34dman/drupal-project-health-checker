@@ -165,7 +165,7 @@ function projecthealth_generate_country_report($pid, $sid, $start, $end) {
     WHERE phu.pid = :pid) as userStats ON pu.name = userStats.phuname
     WHERE pu.pid = :pid
     GROUP BY pu.country_code
-    ORDER BY pu.totalCount DESC',
+    ORDER BY totalCount DESC',
     array(
       ':pid' => $pid,
     )
