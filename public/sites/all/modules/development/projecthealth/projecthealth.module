@@ -42,7 +42,7 @@ function projecthealth_menu() {
     'type' => MENU_NORMAL_ITEM,
   );
 
-  $items['projecthealth/view/%/%'] = array(
+  $items['projecthealth/view/%projecthealth_project/%projecthealth_snapshot'] = array(
     'title' => 'Report',
     'page callback' => 'projecthealth_view_snapshot',
     'page arguments' => array(2, 3),
@@ -50,7 +50,7 @@ function projecthealth_menu() {
     'type' => MENU_NORMAL_ITEM,
   );
 
-  $items['projecthealth/data/%/%'] = array(
+  $items['projecthealth/data/%projecthealth_project/%projecthealth_snapshot'] = array(
     'page callback' => 'projecthealth_generate_report_data',
     'page arguments' => array(2, 3),
     'delivery callback' => 'drupal_json_output',
@@ -290,12 +290,9 @@ function projecthealth_list_project_snapshots($project_machine_name) {
 }
 
 /**
- * View Project snapshot.
- *
- * @see projecthealth_menu()
+ * Helper function in menu callback to load a project.
  */
-function projecthealth_view_snapshot($project_name, $sid) {
-
+function projecthealth_project_load($project_name) {
   $project = db_query('SELECT * FROM {projecthealth_project} WHERE name = :project_name AND sid = :sid',
     array(
       ':project_name' => $project_name,
@@ -303,9 +300,24 @@ function projecthealth_view_snapshot($project_name, $sid) {
     )
   )->fetchObject();
   $project->data = unserialize($project->data);
-  drupal_set_title(check_plain($project->data->title));
+  return $project;
+}
 
+/**
+ * Helper function in menu callback to load a project.
+ */
+function projecthealth_snapshot_load($sid) {
   $snapshot = db_query("SELECT * from {projecthealth_snapshot} WHERE id = :sid LIMIT 1", array(":sid" => $sid))->fetchObject();
+  return $snapshot;
+}
+
+/**
+ * View Project snapshot.
+ *
+ * @see projecthealth_menu()
+ */
+function projecthealth_view_snapshot($project, $snapshot) {
+  drupal_set_title(check_plain($project->data->title));
   // Bail out early if snapshot is not complete.
   if ($snapshot->progress < 100) {
     return theme('projecthealth_snapshot_incomplete', $snapshot);

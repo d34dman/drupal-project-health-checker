@@ -70,17 +70,21 @@
         </div>
         <div class="box-footer no-border">
           <div class="row">
-            <div class="col-xs-4 text-center" style="border-right: 1px solid #f4f4f4">
+            <div class="col-xs-3 text-center" style="border-right: 1px solid #f4f4f4">
               <div id="sparkline-1"></div>
-              <div class="knob-label">Total</div>
+              <div class="knob-label">Users</div>
             </div>
-            <div class="col-xs-4 text-center" style="border-right: 1px solid #f4f4f4">
+            <div class="col-xs-3 text-center" style="border-right: 1px solid #f4f4f4">
               <div id="sparkline-2"></div>
-              <div class="knob-label">Active</div>
+              <div class="knob-label">Issues</div>
             </div>
-            <div class="col-xs-4 text-center">
+            <div class="col-xs-3 text-center">
               <div id="sparkline-3"></div>
-              <div class="knob-label">Inactive</div>
+              <div class="knob-label">Comments</div>
+            </div>
+            <div class="col-xs-3 text-center">
+              <div id="sparkline-3"></div>
+              <div class="knob-label">Total</div>
             </div>
           </div>
         </div>
@@ -169,10 +173,16 @@
   <!-- /.row -->
 </section>
 <script src="//cdnjs.cloudflare.com/ajax/libs/d3/3.5.3/d3.min.js"></script>
+<script src="//d3js.org/queue.v1.min.js"></script>
 <script src="//cdnjs.cloudflare.com/ajax/libs/topojson/1.6.9/topojson.min.js"></script>
 <script src="/sites/all/modules/development/projecthealth/js/datamaps.world.min.js"></script>
 <script>
-var map = new Datamap({
+queue()
+    .defer(d3.json, "/projecthealth/data/{$project->name}/{$snapshot->id}")
+    .await(ready);
+
+function ready(error, stats) {
+  var map = new Datamap({
   element: document.getElementById('map-container'),
     fills: {
       HIGHEST: '#0678be',
@@ -200,4 +210,5 @@ var map = new Datamap({
       }
     }
   });
+}
 </script>
