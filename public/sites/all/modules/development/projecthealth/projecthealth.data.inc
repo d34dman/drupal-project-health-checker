@@ -16,7 +16,7 @@ function projecthealth_generate_report_data($project, $snapshot, $start = PROJEC
   }
   $pid = $project->id;
   $sid = $snapshot->id;
-  $cid = "$pid:$sid:$snapshot_ready:$start:$end";
+  $cid = "projecthealth:$pid:$sid:$snapshot_ready:$start:$end";
   if (!$reset AND $cache = cache_get($cid)) {
     return $cache->data;
   }
@@ -31,7 +31,7 @@ function projecthealth_generate_report_data($project, $snapshot, $start = PROJEC
     'issues' => projecthealth_generate_issue_report($pid, $sid, $start, $end),
     'comments' => projecthealth_generate_comment_report($pid, $sid, $start, $end),
     'users' => projecthealth_generate_user_report($pid, $sid, $start, $end),
-    'world_stats' => projecthealth_generate_country_report($pid, $sid, $start, $end),
+    'world_stats' => projecthealth_generate_world_stats($pid),
   );
   cache_set($cid, $data);
   return $data;
@@ -148,6 +148,47 @@ function projecthealth_generate_user_report($pid) {
 
   return $users;
 }
+
+/**
+ * Generate world stats.
+ */
+function projecthealth_generate_world_stats($pid) {
+  $stats = array();
+  $result = db_query('SELECT u.country_code as country_code, ifnull(c.comments,0) as commentsCount, ifnull(i.issues,0) as issuesCount, COUNT(u.id) as usersCount, (ifnull(c.comments,0) + ifnull(i.issues,0)) as totalCount
+    FROM projecthealth_user as u
+
+    LEFT JOIN (
+    SELECT COUNT(c.id) as comments, cu.country_code
+    FROM projecthealth_comment as c
+
+    LEFT JOIN projecthealth_user as cu ON cu.uid = c.uid
+
+    WHERE c.pid = :pid AND cu.pid = :pid
+
+    GROUP BY cu.country_code
+    ) AS c ON c.country_code = u.country_code
+
+    LEFT JOIN (
+    SELECT COUNT(i.id) as issues, iu.country_code as country_code
+    FROM projecthealth_issue as i
+
+    LEFT JOIN projecthealth_user as iu ON iu.uid = i.uid
+
+    WHERE i.pid = :pid AND iu.pid = :pid
+
+    GROUP BY iu.country_code
+    ) AS i ON i.country_code = u.country_code
+
+    WHERE u.pid = :pid
+    GROUP BY u.country_code',
+      array(':pid' => $pid)
+  );
+  foreach ($result as $record) {
+    $stats[$record->country_code] = $record;
+  }
+  return $stats;
+}
+
 /**
  * Issue report.
  */
