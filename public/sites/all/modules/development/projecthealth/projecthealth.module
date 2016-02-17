@@ -644,7 +644,7 @@ function projecthealth_comment_create($sid, $pid, $issue, $comment) {
 /**
  * Load a user.
  */
-function projecthealth_user_load($pid, $do_uid) {
+function _projecthealth_user_load($pid, $do_uid) {
   $user = db_select('projecthealth_user', 'u')
     ->fields('u')
     ->condition('pid', $pid)
@@ -659,7 +659,7 @@ function projecthealth_user_load($pid, $do_uid) {
  */
 function projecthealth_user_create($pid, $do_uid, $latest_activity = 0, $maintainer = 0) {
   // Check if user exists, update maintainer and lastest activity and bail out.
-  $result = projecthealth_user_load($pid, $do_uid);
+  $result = _projecthealth_user_load($pid, $do_uid);
   if ($result) {
     if ($maintainer) {
       db_update('projecthealth_user')
@@ -697,7 +697,7 @@ function projecthealth_user_create($pid, $do_uid, $latest_activity = 0, $maintai
  */
 function projecthealth_user_update($pid, $do_uid, $activity_time) {
   // Get latest activity.
-  $result = projecthealth_user_load($pid, $do_uid);
+  $result = _projecthealth_user_load($pid, $do_uid);
   if (empty($result)) {
     projecthealth_user_create($pid, $do_uid, $activity_time);
   }
