@@ -659,7 +659,8 @@ function projecthealth_user_load($pid, $do_uid) {
  */
 function projecthealth_user_create($pid, $do_uid, $latest_activity = 0, $maintainer = 0) {
   // check if user exists, update maintainer and lastest activity and bail out.
-  if ($user = projecthealth_user_load($pid, $do_uid)) {
+  $user = projecthealth_user_load($pid, $do_uid);
+  if ($user) {
     if ($maintainer) {
       db_update('projecthealth_user')
         ->fields(array('maintainer' => $maintainer))
