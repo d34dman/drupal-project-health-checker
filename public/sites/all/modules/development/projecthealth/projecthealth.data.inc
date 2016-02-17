@@ -186,6 +186,7 @@ function projecthealth_generate_world_stats($pid) {
   foreach ($result as $record) {
     $stats[$record->country_code] = $record;
   }
+  return $stats;
 }
 
 /**
