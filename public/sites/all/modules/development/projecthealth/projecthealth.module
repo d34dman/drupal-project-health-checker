@@ -658,9 +658,9 @@ function projecthealth_user_load($pid, $do_uid) {
  * Creates a user if required.
  */
 function projecthealth_user_create($pid, $do_uid, $latest_activity = 0, $maintainer = 0) {
-  // check if user exists, update maintainer and lastest activity and bail out.
-  $user = projecthealth_user_load($pid, $do_uid);
-  if ($user) {
+  // Check if user exists, update maintainer and lastest activity and bail out.
+  $result = projecthealth_user_load($pid, $do_uid);
+  if ($result) {
     if ($maintainer) {
       db_update('projecthealth_user')
         ->fields(array('maintainer' => $maintainer))
@@ -669,7 +669,7 @@ function projecthealth_user_create($pid, $do_uid, $latest_activity = 0, $maintai
         ->execute();
     }
     projecthealth_user_update($pid, $do_uid, $latest_activity);
-    return $user->id;
+    return $result->id;
   }
   $user_id = NULL;
   $user = drupalorg_api_get_user($do_uid);
@@ -697,13 +697,7 @@ function projecthealth_user_create($pid, $do_uid, $latest_activity = 0, $maintai
  */
 function projecthealth_user_update($pid, $do_uid, $activity_time) {
   // Get latest activity.
-  $result = db_select('projecthealth_user', 'pu')
-    ->fields('pu')
-    ->condition('uid', $do_uid)
-    ->condition('pid', $pid)
-    ->execute()
-    ->fetchAssoc();
-
+  $result = projecthealth_user_load($pid, $do_uid);
   if (empty($result)) {
     projecthealth_user_create($pid, $do_uid, $activity_time);
   }
