@@ -1,5 +1,5 @@
 I. INSTALLATION
-  1. Using multibasebox
+  1. Using multibasebox (https://github.com/factorial-io/multibasebox) and fabalicious (https://github.com/factorial-io/fabalicious)
     1. Checkout the repo and run following commands.
       >>fab config:mbb docker:run
       >>fab config:mbb install
