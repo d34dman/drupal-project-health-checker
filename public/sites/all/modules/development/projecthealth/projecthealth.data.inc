@@ -119,7 +119,7 @@ function projecthealth_generate_user_report($pid) {
       YEAR(now()) - YEAR(FROM_UNIXTIME(pu.created)) as age,
       SUM(CASE WHEN pu.gender = \'male\'    THEN 1 ELSE 0 END)     AS males,
       SUM(CASE WHEN pu.gender = \'female\'    THEN 1 ELSE 0 END)   AS females,
-      SUM(CASE WHEN ISNULL(pu.gender)    THEN 1 ELSE 0 END)      AS gender_unknown
+      SUM(CASE WHEN ISNULL(pu.gender)    THEN 1 ELSE 0 END)      AS unknown
     FROM {projecthealth_user} as pu
     WHERE pu.pid = :pid
     GROUP BY YEAR(FROM_UNIXTIME(pu.created))
@@ -135,7 +135,7 @@ function projecthealth_generate_user_report($pid) {
       YEAR(FROM_UNIXTIME(pu.latest_activity)) as year,
       SUM(CASE WHEN pu.gender = \'male\'    THEN 1 ELSE 0 END)     AS males,
       SUM(CASE WHEN pu.gender = \'female\'    THEN 1 ELSE 0 END)   AS females,
-      SUM(CASE WHEN ISNULL(pu.gender)    THEN 1 ELSE 0 END)      AS gender_unknown
+      SUM(CASE WHEN ISNULL(pu.gender)    THEN 1 ELSE 0 END)      AS unknown
     FROM {projecthealth_user} as pu
     WHERE pu.pid = :pid
     GROUP BY YEAR(FROM_UNIXTIME(pu.latest_activity))
