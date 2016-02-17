@@ -643,9 +643,34 @@ function projecthealth_comment_create($sid, $pid, $issue, $comment) {
 }
 
 /**
- * Creates a project.
+ * Load a user.
+ */
+function projecthealth_user_load($pid, $do_uid) {
+  $user = db_select('projecthealth_user', 'u')
+    ->fields('u')
+    ->condition('pid', $pid)
+    ->condition('uid', $do_uid)
+    ->execute()
+    ->fetchObject();
+  return $user;
+}
+
+/**
+ * Creates a user if required.
  */
 function projecthealth_user_create($pid, $do_uid, $latest_activity = 0, $maintainer = 0) {
+  // check if user exists, update maintainer and lastest activity and bail out.
+  if ($user = projecthealth_user_load($pid, $do_uid)) {
+    if ($maintainer) {
+      db_update('projecthealth_user')
+        ->fields(array('maintainer' => $maintainer))
+        ->condition('uid', $do_uid)
+        ->condition('pid', $pid)
+        ->execute();
+    }
+    projecthealth_user_update($pid, $do_uid, $latest_activity);
+    return $user->id;
+  }
   $user_id = NULL;
   $user = drupalorg_api_get_user($do_uid);
   if ($user) {
