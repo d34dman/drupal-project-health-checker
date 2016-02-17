@@ -1,0 +1,712 @@
+<?php
+
+/**
+ * @file
+ * Project Health report from Drupal.org .
+ */
+
+define('PROJECTHEALTH_DEFAULT_START_TIME', '0');
+
+define('PROJECTHEALTH_DEFAULT_END_TIME', strtotime('20270115 08:00:00'));
+define('PROJECTHEALTH_DEFAULT_LATEST_DATE_BEGIN', strtotime('20151201 00:00:00'));
+
+module_load_include('inc', 'projecthealth', 'projecthealth.lookup');
+module_load_include('inc', 'projecthealth', 'projecthealth.data');
+
+/**
+ * Implements hook_menu().
+ */
+function projecthealth_menu() {
+
+  $items['projecthealth/add'] = array(
+    'title' => 'Take snapshot of a project',
+    'page callback' => 'drupal_get_form',
+    'page arguments' => array('projecthealth_form'),
+    'access arguments' => array('projecthealth take snapshot'),
+    'type' => MENU_SUGGESTED_ITEM,
+  );
+
+  $items['projecthealth/view'] = array(
+    'title' => 'Projects',
+    'page callback' => 'projecthealth_list_projects',
+    'page arguments' => array(2),
+    'access arguments' => array('access content'),
+    'type' => MENU_NORMAL_ITEM,
+  );
+
+  $items['projecthealth/view/%'] = array(
+    'title' => 'Snapshots',
+    'page callback' => 'projecthealth_list_project_snapshots',
+    'page arguments' => array(2),
+    'access arguments' => array('access content'),
+    'type' => MENU_NORMAL_ITEM,
+  );
+
+  $items['projecthealth/view/%projecthealth_project/%projecthealth_snapshot'] = array(
+    'title' => 'Report',
+    'page callback' => 'projecthealth_view_snapshot',
+    'page arguments' => array(2, 3),
+    'load arguments' => array(3),
+    'access arguments' => array('access content'),
+    'type' => MENU_NORMAL_ITEM,
+  );
+
+  $items['projecthealth/data/%projecthealth_project/%projecthealth_snapshot'] = array(
+    'page callback' => 'projecthealth_generate_report_data',
+    'page arguments' => array(2, 3),
+    'load arguments' => array(3),
+    'delivery callback' => 'drupal_json_output',
+    'access arguments' => array('access content'),
+    'type' => MENU_CALLBACK,
+    'file' => 'projecthealth.data.inc',
+    'file path' => drupal_get_path('module', 'projecthealth'),
+  );
+
+  $items['projecthealth/delete/%/%'] = array(
+    'title' => 'Take snapshot of a project',
+    'page callback' => 'projecthealth_delete_snapshot',
+    'page arguments' => array(2, 3),
+    'access arguments' => array('projecthealth delete snapshot'),
+    'type' => MENU_NORMAL_ITEM,
+  );
+
+  return $items;
+}
+
+/**
+ * Form to create snapshot of a project.
+ *
+ * @see projecthealth_menu()
+ */
+function projecthealth_form($form, &$form_state) {
+
+  // @todo: support monthly snapshot.
+  $form['snapshot'] = array(
+    '#type' => 'textfield',
+    '#title' => t('Snapshot name'),
+    '#description' => t('Give the name to snapshot.'),
+    '#default_value' => t('All time'),
+    '#disabled' => TRUE,
+  );
+
+  $form['field_project_machine_name'] = array(
+    '#type' => 'textfield',
+    '#title' => t('Project machine name'),
+    '#description' => t('The machine name of the project at Drupal.org'),
+    '#required' => TRUE,
+  );
+
+  $form['submit'] = array(
+    '#type' => 'submit',
+    '#value' => t('Create'),
+  );
+  return $form;
+}
+
+/**
+ * Validate handler for projecthealth_form().
+ */
+function projecthealth_form_validate($form, &$form_state) {
+  $values = $form_state['values'];
+  // Create a snapshot id for current status calculation.
+  $project = drupalorg_api_get_project($values['field_project_machine_name']);
+  if (empty($project)) {
+    form_set_error('field_project_machine_name', t('Invalid project machine name.'));
+  }
+}
+
+
+/**
+ * Submit handler for projecthealth_form().
+ */
+function projecthealth_form_submit($form, &$form_state) {
+  $values = $form_state['values'];
+  // Create a snapshot id for current status calculation.
+  $sid = projecthealth_snapshot_create($values['snapshot']);
+  $project = drupalorg_api_get_project($values['field_project_machine_name']);
+  $pid = projecthealth_project_create($sid, $project);
+
+  $data['sid'] = $sid;
+  $data['pid'] = $pid;
+  $data['project'] = $project;
+
+  projecthealth_snapshot_process_maintainers($data);
+  $pager_max = _projecthealth_get_issues_pager_max($data);
+  $data['pager_max'] = $pager_max;
+  $queue = DrupalQueue::get('projectHealthIssuesIndex');
+  for ($page = 0; $page <= $pager_max; $page++) {
+    $data['page'] = $page;
+    $queue->createItem($data);
+  }
+  $form_state['redirect'] = "projecthealth/view/{$project->field_project_machine_name}/$sid";
+}
+
+/**
+ * Get number of issue pages for a project.
+ */
+function _projecthealth_get_issues_pager_max($data) {
+  $project = $data['project'];
+  $sid = $data['sid'];
+  $pid = $data['pid'];
+  $result = drupalorg_api_get_issues($project, 0);
+  if (empty($result->last)) {
+    return 0;
+  }
+  return _projecthealth_get_page_number($result->last);
+}
+
+/**
+ * Get number of issue pages for a project.
+ */
+function _projecthealth_get_comments_pager_max($data) {
+  $project = $data['project'];
+  $issue = $data['issue'];
+  $sid = $data['sid'];
+  $pid = $data['pid'];
+  $result = drupalorg_api_get_comments($issue, 0);
+  if (empty($result->last)) {
+    return 0;
+  }
+  return _projecthealth_get_page_number($result->last);
+}
+
+/**
+ * Helper function to get 'page' query parameter in a url.
+ */
+function _projecthealth_get_page_number($url) {
+  parse_str($url);
+  return isset($page) ? $page : 0;
+}
+
+/**
+ * List available Projects.
+ *
+ * @see projecthealth_menu()
+ */
+function projecthealth_list_projects() {
+  $header = array(
+    array('data' => t('ID')),
+    array('data' => t('Project machine name')),
+    array('data' => t('Snapshot created')),
+    array('data' => t('Operations')),
+  );
+
+  $query = db_select('projecthealth_project', 'p')->extend('PagerDefault');
+  $query->fields('p', array('id', 'name', 'sync_time', 'sid'));
+
+  $result = $query
+    ->limit(10)
+    ->orderBy('p.name')
+    ->execute();
+
+  $rows = array();
+  foreach ($result as $row) {
+    $links = array();
+    $links[] = array(
+      'title' => t('view'),
+      'href' => "projecthealth/view/{$row->name}/{$row->sid}",
+    );
+    $links[] = array(
+      'title' => t('delete'),
+      'href' => "projecthealth/delete/{$row->name}/{$row->sid}",
+    );
+    $operations = theme('links__ctools_dropbutton', array('links' => $links));
+
+    $item = array(
+      $row->id,
+      $row->name,
+      format_date($row->sync_time),
+      $operations,
+    );
+    $rows[] = array('data' => $item);
+  }
+
+  $build['pager_table'] = array(
+    '#theme' => 'table',
+    '#header' => $header,
+    '#rows' => $rows,
+    '#empty' => t('There are no project snapshots.'),
+  );
+
+  $build['pager_pager'] = array('#theme' => 'pager');
+
+  return $build;
+}
+
+
+/**
+ * List available Project snapshot.
+ *
+ * @see projecthealth_menu()
+ */
+function projecthealth_list_project_snapshots($project_machine_name) {
+
+  $header = array(
+    array('data' => t('ID')),
+    array('data' => t('Project machine name')),
+    array('data' => t('Snapshot created')),
+    array('data' => t('Operations')),
+  );
+
+  $query = db_select('projecthealth_project', 'p')->extend('PagerDefault');
+  $query->condition('p.name', $project_machine_name);
+  $query->fields('p', array('id', 'name', 'sync_time', 'sid'));
+
+  $result = $query
+    ->limit(10)
+    ->orderBy('p.name')
+    ->execute();
+
+  $rows = array();
+  foreach ($result as $row) {
+    $links = array();
+    $links[] = array(
+      'title' => t('view'),
+      'href' => "projecthealth/view/{$row->name}/{$row->sid}",
+    );
+    $links[] = array(
+      'title' => t('delete'),
+      'href' => "projecthealth/delete/{$row->name}/{$row->sid}",
+    );
+    $operations = theme('links__ctools_dropbutton', array('links' => $links));
+
+    $item = array(
+      $row->id,
+      $row->name,
+      format_date($row->sync_time),
+      $operations,
+    );
+    $rows[] = array('data' => $item);
+  }
+
+  $build['pager_table'] = array(
+    '#theme' => 'table',
+    '#header' => $header,
+    '#rows' => $rows,
+    '#empty' => t('There are no project snapshots.'),
+  );
+
+  $build['pager_pager'] = array('#theme' => 'pager');
+
+  return $build;
+}
+
+/**
+ * Helper function in menu callback to load a project.
+ */
+function projecthealth_project_load($project_name, $sid) {
+  $project = db_query('SELECT * FROM {projecthealth_project} WHERE name = :project_name AND sid = :sid',
+    array(
+      ':project_name' => $project_name,
+      ':sid' => $sid,
+    )
+  )->fetchObject();
+  $project->data = unserialize($project->data);
+  return $project;
+}
+
+/**
+ * Helper function in menu callback to load a snapshot.
+ */
+function projecthealth_snapshot_load($sid) {
+  $snapshot = db_query("SELECT * from {projecthealth_snapshot} WHERE id = :sid LIMIT 1", array(":sid" => $sid))->fetchObject();
+  return $snapshot;
+}
+
+/**
+ * View Project snapshot.
+ *
+ * @see projecthealth_menu()
+ */
+function projecthealth_view_snapshot($project, $snapshot) {
+  drupal_set_title(check_plain($project->data->title));
+  // Bail out early if snapshot is not complete.
+  if ($snapshot->progress < 100) {
+    return theme('projecthealth_snapshot_incomplete', $snapshot);
+  }
+
+  $sections = array(
+    'total' => array(
+      'start' => PROJECTHEALTH_DEFAULT_START_TIME,
+      'end' => PROJECTHEALTH_DEFAULT_END_TIME,
+    ),
+    'current' => array(
+      'start' => strtotime('20151201'),
+      'end' => PROJECTHEALTH_DEFAULT_END_TIME,
+    ),
+  );
+  $data = array();
+
+  $secret_reset_key = variable_get('projecthealth_secret_reset_key', 'reset');
+  $reset = isset($_GET[$secret_reset_key]) ? $_GET[$secret_reset_key] : FALSE;
+  foreach ($sections as $key => $section) {
+    $snapshot_data = projecthealth_generate_report_data($project, $snapshot, $section['start'], $section['end'], $reset);
+    $data[$key] = $snapshot_data;
+  }
+  return theme('projecthealth_snapshot', $data);
+}
+
+/**
+ * Implements hook_theme().
+ */
+function projecthealth_theme($existing, $type, $theme, $path) {
+  return array(
+    'projecthealth_snapshot' => array(
+      'render element' => 'element',
+      'template' => 'projecthealth.snapshot',
+      'variables' => array('data' => array()),
+    ),
+    'projecthealth_snapshot_incomplete' => array(
+      'render element' => 'element',
+      'template' => 'projecthealth.snapshot.incomplete',
+      'variables' => array('data' => array()),
+    ),
+  );
+}
+
+/**
+ * Implements hook_permission().
+ */
+function projecthealth_permission() {
+  return array(
+    'projecthealth take snapshot' => array(
+      'title' => t('Create Project health snapshot'),
+      'description' => t('Take a project health snapshot'),
+    ),
+    'projecthealth delete snapshot' => array(
+      'title' => t('Delete Project health snapshot'),
+      'description' => t('Delete a project health snapshot'),
+    ),
+  );
+}
+
+/**
+ * Implements hook_cron_queue_info().
+ */
+function projecthealth_cron_queue_info() {
+  $queues['projectHealthIssuesIndex'] = array(
+    'worker callback' => 'projecthealth_snapshot_process_issues_per_page',
+    'time' => 30,
+  );
+  $queues['projectHealthCommentsIndex'] = array(
+    'worker callback' => 'projecthealth_snapshot_process_comments_per_page',
+    'time' => 30,
+  );
+  return $queues;
+}
+
+/**
+ * Given issue node id, process all comments under the node.
+ */
+function projecthealth_snapshot_process_issues_per_page($data) {
+
+  $project = $data['project'];
+  $sid = $data['sid'];
+  $pid = $data['pid'];
+  $page = $data['page'];
+  $issue_pager_max = $data['pager_max'];
+  $comment_data = $data;
+  $comment_data['issue_page'] = $page;
+  $comment_data['issue_pager_max'] = $issue_pager_max;
+  $comment_data['pager_max'] = 0;
+  $is_issues_last_page = $comment_data['is_issues_last_page'] = ($page == $issue_pager_max);
+
+  $result = drupalorg_api_get_issues($project, $page);
+  $queue = DrupalQueue::get('projectHealthCommentsIndex');
+  foreach ($result->list as $issue) {
+    projecthealth_issue_create($sid, $pid, $issue);
+    $comment_data['issue'] = $issue;
+    $pager_max = _projecthealth_get_comments_pager_max($comment_data);
+    $comment_data['pager_max'] = $pager_max;
+    for ($page = 0; $page <= $pager_max; $page++) {
+      $comment_data['page'] = $page;
+      $queue->createItem($comment_data);
+    }
+  }
+}
+
+/**
+ * Given issue node id, process all comments under the node.
+ */
+function projecthealth_snapshot_process_comments_per_page($data) {
+  $issue = $data['issue'];
+  $project = $data['project'];
+  $sid = $data['sid'];
+  $pid = $data['pid'];
+  $page = $data['page'];
+  $issue_page = $data['issue_page'];
+  $issue_pager_max = $data['issue_pager_max'];
+  $pager_max = $data['pager_max'];
+  $is_issues_last_page = $data['is_issues_last_page'];
+  $is_comments_last_page = ($page == $pager_max);
+  $result = drupalorg_api_get_comments($issue, $page);
+  foreach ($result->list as $comment) {
+    projecthealth_comment_create($sid, $pid, $issue, $comment);
+  }
+  if ($is_issues_last_page AND $is_comments_last_page) {
+    projecthealth_snapshot_progress_update($sid, 100);
+  }
+  elseif ($is_comments_last_page AND $issue_pager_max) {
+    projecthealth_snapshot_progress_update($sid, (int) (100 * $issue_page / $issue_pager_max));
+  }
+}
+
+/**
+ * Process all maintainers for the project.
+ */
+function projecthealth_snapshot_process_maintainers($data) {
+  $project = $data['project'];
+  $sid = $data['sid'];
+  $pid = $data['pid'];
+  $result = drupalorg_api_get_maintainers($project);
+  foreach ($result as $do_uid => $user) {
+    projecthealth_user_create($pid, $do_uid, 0, 1);
+  }
+}
+
+
+/**
+ * Delete all data related to snapshot.
+ */
+function projecthealth_delete_snapshot($project_name, $sid) {
+  $pid = db_query('SELECT id FROM {projecthealth_project} WHERE name = :project_name AND sid = :sid',
+    array(
+      ':project_name' => $project_name,
+      ':sid' => $sid,
+    )
+  )->fetchField();
+  $data = array(
+    'sid' => $sid,
+    'pid' => $pid,
+  );
+  // Delete snapshot sid.
+  $count = db_delete('projecthealth_snapshot')->condition('id', $sid)->execute();
+  if ($count) {
+    drupal_set_message(t('Successfully deleted snapshot [sid @sid]',
+      array(
+        '@sid' => $sid,
+      )),
+      'status'
+    );
+  }
+
+  // Delete project pid.
+  $count = db_delete('projecthealth_project')->condition('id', $pid)->execute();
+  if ($count) {
+    drupal_set_message(t('Successfully deleted project in snapshot [sid @sid] for project [pid @pid]',
+      array(
+        '@sid' => $sid,
+        '@pid' => $pid,
+      )),
+      'status'
+    );
+  }
+
+  // Delete all issues taggeed with sid pid.
+  $count = db_delete('projecthealth_issue')->condition('pid', $pid)->condition('sid', $sid)->execute();
+  if ($count) {
+    drupal_set_message(t('Successfully deleted the @count issues in snapshot [sid @sid] for project [pid @pid]',
+      array(
+        '@count' => $count,
+        '@sid' => $sid,
+        '@pid' => $pid,
+      )),
+      'status'
+    );
+  }
+
+  // Delete all comments tagged with sid pid.
+  $count = db_delete('projecthealth_comment')->condition('pid', $pid)->condition('sid', $sid)->execute();
+  if ($count) {
+    drupal_set_message(t('Successfully deleted the @count comments in snapshot [sid @sid] for project [pid @pid]',
+      array(
+        '@count' => $count,
+        '@sid' => $sid,
+        '@pid' => $pid,
+      )),
+      'status'
+    );
+  }
+
+  // Delete all users tagged with pid.
+  $count = db_delete('projecthealth_user')->condition('pid', $pid)->execute();
+  if ($count) {
+    drupal_set_message(t('Successfully deleted the @count users in snapshot [sid @sid] for project [pid @pid]',
+      array(
+        '@count' => $count,
+        '@sid' => $sid,
+        '@pid' => $pid,
+      )),
+      'status'
+    );
+  }
+
+  drupal_goto('projecthealth/view');
+}
+
+/**
+ * Creates a snapshot.
+ */
+function projecthealth_snapshot_create($title) {
+
+  $fields = array(
+    'created' => REQUEST_TIME,
+    'start' => PROJECTHEALTH_DEFAULT_START_TIME,
+    'end' => PROJECTHEALTH_DEFAULT_END_TIME,
+    'progress' => 0,
+    'title' => $title,
+  );
+
+  $snapshot_id = db_insert('projecthealth_snapshot')
+    ->fields($fields)
+    ->execute();
+
+  return $snapshot_id;
+}
+
+/**
+ * Creates a project.
+ */
+function projecthealth_project_create($sid, $project) {
+
+  $fields = array(
+    'name' => $project->field_project_machine_name,
+    'created' => $project->created,
+    'sid' => $sid,
+    'uid' => $project->author->id,
+    'sync_time' => REQUEST_TIME,
+    'maintenance_status' => $project->taxonomy_vocabulary_44->id,
+    'development_status' => $project->taxonomy_vocabulary_46->id,
+    'downloads' => $project->field_download_count,
+    'data' => serialize($project),
+  );
+
+  $project_id = db_insert('projecthealth_project')
+    ->fields($fields)
+    ->execute();
+
+  projecthealth_user_update($project_id, $project->author->id, $project->created);
+
+  return $project_id;
+}
+
+/**
+ * Creates a issue.
+ */
+function projecthealth_issue_create($sid, $pid, $issue) {
+
+  $fields = array(
+    'created' => $issue->created,
+    'sid' => $sid,
+    'pid' => $pid,
+    'uid' => isset($issue->author->id) ? $issue->author->id : 0,
+    'sync_time' => REQUEST_TIME,
+    'issue_id' => $issue->nid,
+    'priority' => $issue->field_issue_priority,
+    'status' => $issue->field_issue_status,
+    'category' => $issue->field_issue_category,
+  );
+
+  $issue_id = db_insert('projecthealth_issue')
+    ->fields($fields)
+    ->execute();
+
+  projecthealth_user_update($pid, $issue->author->id, $issue->created);
+
+  return $issue_id;
+}
+
+/**
+ * Creates a comment.
+ */
+function projecthealth_comment_create($sid, $pid, $issue, $comment) {
+  // Don't log system generated comments.
+  if (empty($comment->author->id)) {
+    return;
+  }
+  $fields = array(
+    'created' => $comment->created,
+    'sid' => $sid,
+    'pid' => $pid,
+    'uid' => $comment->author->id,
+    'sync_time' => REQUEST_TIME,
+    'issue_id' => $issue->nid,
+  );
+
+  $comment_id = db_insert('projecthealth_comment')
+    ->fields($fields)
+    ->execute();
+
+  projecthealth_user_update($pid, $comment->author->id, $comment->created);
+
+  return $comment_id;
+}
+
+/**
+ * Creates a project.
+ */
+function projecthealth_user_create($pid, $do_uid, $latest_activity = 0, $maintainer = 0) {
+  $user_id = NULL;
+  $user = drupalorg_api_get_user($do_uid);
+  if ($user) {
+    $fields = array(
+      'uid' => $user->uid,
+      'created' => $user->created,
+      'name' => $user->name,
+      'country_code' => projecthealth_get_country_codes($user->field_country),
+      'gender' => $user->field_gender,
+      'pid' => $pid,
+      'maintainer' => $maintainer,
+      'latest_activity' => $latest_activity,
+      'data' => serialize($user),
+    );
+    $user_id = db_insert('projecthealth_user')
+      ->fields($fields)
+      ->execute();
+  }
+  return $user_id;
+}
+
+/**
+ * Update user's last activity time.
+ */
+function projecthealth_user_update($pid, $do_uid, $activity_time) {
+  // Get latest activity.
+  $result = db_select('projecthealth_user', 'pu')
+    ->fields('pu')
+    ->condition('uid', $do_uid)
+    ->condition('pid', $pid)
+    ->execute()
+    ->fetchAssoc();
+
+  if (empty($result)) {
+    projecthealth_user_create($pid, $do_uid, $activity_time);
+  }
+  else {
+    $latest_activity = $result['latest_activity'];
+    if ($latest_activity < $activity_time) {
+      $fields = array(
+        'latest_activity' => $activity_time,
+      );
+      db_update('projecthealth_user')
+        ->fields($fields)
+        ->condition('uid', $do_uid)
+        ->condition('pid', $pid)
+        ->execute();
+    }
+  }
+}
+
+
+/**
+ * Update snapshot index progress.
+ */
+function projecthealth_snapshot_progress_update($sid, $progress) {
+  $fields = array(
+    'progress' => $progress,
+  );
+  db_update('projecthealth_snapshot')
+    ->fields($fields)
+    ->condition('id', $sid)
+    ->execute();
+}

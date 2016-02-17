@@ -1,0 +1,28 @@
+<?php
+/**
+ * @file
+ * Install routines for deploy module.
+ */
+
+/**
+ * Implements hook_install().
+ *
+ */
+function dcasia16projecthealth_deploy_install() {
+  for ($i = 7000; $i < 8000; $i++) {
+    $candidate = 'dcasia16projecthealth_deploy_update_' . $i;
+    if (function_exists($candidate)) {
+      $candidate();
+    }
+  }
+}
+
+/**
+ * Implements hook_update_N().
+ */
+function dcasia16projecthealth_deploy_update_7000() {
+  // Enable custom themes.
+  $theme_list = array('bootstrap', 'dcasia16');
+  theme_enable($theme_list);
+  variable_set('theme_default','dcasia16');
+}

@@ -1,0 +1,19 @@
+name = Drupal Con Asia 2016 Project Status
+description = "Helper module to centralize all deploy-related actions via hook_update"
+package = DC Asia 2016
+core = 7.x
+dependencies[] = system (>7.10)
+dependencies[] = menu
+dependencies[] = entityreference
+dependencies[] = field_ui
+dependencies[] = number
+dependencies[] = list
+dependencies[] = features
+dependencies[] = jquery_update
+dependencies[] = search
+
+dependencies[] = projecthealth
+dependencies[] = drupalorg_api
+dependencies[] = fe_coc_app_rules_redirect_to_login
+
+dependencies[] = googleanalytics
