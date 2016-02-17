@@ -668,7 +668,6 @@ function projecthealth_user_create($pid, $do_uid, $latest_activity = 0, $maintai
         ->condition('pid', $pid)
         ->execute();
     }
-    projecthealth_user_update($pid, $do_uid, $latest_activity);
     return $result->id;
   }
   $user_id = NULL;
