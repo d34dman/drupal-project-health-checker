@@ -181,7 +181,7 @@ function projecthealth_generate_world_stats($pid) {
 
     WHERE u.pid = :pid
     GROUP BY u.country_code',
-      array(':pid' => $pid),
+      array(':pid' => $pid)
   );
   foreach ($result as $record) {
     $stats[$record->country_code] = $record;
