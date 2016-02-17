@@ -109,38 +109,43 @@ function projecthealth_generate_comment_report($pid, $sid, $start, $end) {
  * Issue report.
  */
 function projecthealth_generate_user_report($pid, $sid, $start, $end) {
-  $users = array();
+  $users = array(
+    'age' => array(),
+    'latest_activity' => array(),
+  );
 
   $result = db_query('SELECT
-      phu.name as name,
-      phu.country_code as country_code,
-      phu.uid as uid,
-      ifnull(tpi.count,0) as issues,
-      ifnull(tpc.count,0) as comments,
-      (ifnull(tpc.count,0) + ifnull(tpi.count,0)) as total,
-      phu.created as created,
-      phu.latest_activity as latest_activity,
-      phu.gender as gender
-
-    FROM {projecthealth_user} as phu
-
-    LEFT JOIN (SELECT COUNT(pi.issue_id) AS count, pi.uid as issue_uid
-    FROM {projecthealth_issue} AS pi
-    WHERE pi.pid = :pid
-    GROUP BY pi.uid
-    ) as tpi ON phu.uid = tpi.issue_uid
-
-    LEFT JOIN (SELECT COUNT(pc.id) AS count, pc.uid as issue_uid
-    FROM {projecthealth_comment} AS pc
-    WHERE pc.pid = :pid
-    GROUP BY pc.uid
-    ) as tpc ON phu.uid = tpc.issue_uid
-
-    WHERE phu.pid = :pid', array(':pid' => $pid)
+      COUNT(pu.id) as users,
+      YEAR(now()) - YEAR(FROM_UNIXTIME(pu.created)) as age,
+      SUM(CASE WHEN pu.gender = "male"    THEN 1 ELSE 0 END)     AS males,
+      SUM(CASE WHEN pu.gender = "female"    THEN 1 ELSE 0 END)   AS females,
+      SUM(CASE WHEN ISNULL(pu.gender)    THEN 1 ELSE 0 END)      AS gender_unknown
+    FROM {projecthealth_user} as pu
+    WHERE pu.pid = :pid
+    GROUP BY YEAR(FROM_UNIXTIME(pu.created))
+    ORDER BY age ASC',
+    array(':pid' => $pid)
   );
   foreach ($result as $record) {
-    $users[$record->uid] = $record;
+    $users['age'][$record->uid] = $record;
   }
+
+  $result = db_query('SELECT
+      COUNT(pu.id) as users,
+      YEAR(now()) - YEAR(FROM_UNIXTIME(pu.latest_activity)) as age,
+      SUM(CASE WHEN pu.gender = "male"    THEN 1 ELSE 0 END)     AS males,
+      SUM(CASE WHEN pu.gender = "female"    THEN 1 ELSE 0 END)   AS females,
+      SUM(CASE WHEN ISNULL(pu.gender)    THEN 1 ELSE 0 END)      AS gender_unknown
+    FROM {projecthealth_user} as pu
+    WHERE pu.pid = :pid
+    GROUP BY YEAR(FROM_UNIXTIME(pu.latest_activity))
+    ORDER BY age ASC',
+    array(':pid' => $pid)
+  );
+  foreach ($result as $record) {
+    $users['latest_activity'][$record->uid] = $record;
+  }
+
   return $users;
 }
 /**
