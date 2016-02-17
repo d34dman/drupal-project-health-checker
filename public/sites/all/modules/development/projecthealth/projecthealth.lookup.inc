@@ -248,6 +248,7 @@ function projecthealth_get_country_name_from_code() {
     'UMI' => "United States Minor Outlying Islands",
     'URY' => "Uruguay",
     'USA' => "United States of America",
+    'USA' => "United States",
     'UZB' => "Uzbekistan",
     'VAT' => "Holy See (Vatican City State)",
     'VCT' => "Saint Vincent and the Grenadines",
