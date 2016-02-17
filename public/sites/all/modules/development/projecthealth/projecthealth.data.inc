@@ -108,7 +108,7 @@ function projecthealth_generate_comment_report($pid, $sid, $start, $end) {
 /**
  * Issue report.
  */
-function projecthealth_generate_user_report($pid, $sid, $start, $end) {
+function projecthealth_generate_user_report($pid) {
   $users = array(
     'age' => array(),
     'latest_activity' => array(),
@@ -127,23 +127,23 @@ function projecthealth_generate_user_report($pid, $sid, $start, $end) {
     array(':pid' => $pid)
   );
   foreach ($result as $record) {
-    $users['age'][$record->uid] = $record;
+    $users['age'][$record->age] = $record;
   }
 
   $result = db_query('SELECT
       COUNT(pu.id) as users,
-      YEAR(now()) - YEAR(FROM_UNIXTIME(pu.latest_activity)) as age,
+      YEAR(FROM_UNIXTIME(pu.latest_activity)) as year,
       SUM(CASE WHEN pu.gender = \'male\'    THEN 1 ELSE 0 END)     AS males,
       SUM(CASE WHEN pu.gender = \'female\'    THEN 1 ELSE 0 END)   AS females,
       SUM(CASE WHEN ISNULL(pu.gender)    THEN 1 ELSE 0 END)      AS gender_unknown
     FROM {projecthealth_user} as pu
     WHERE pu.pid = :pid
     GROUP BY YEAR(FROM_UNIXTIME(pu.latest_activity))
-    ORDER BY age ASC',
+    ORDER BY year ASC',
     array(':pid' => $pid)
   );
   foreach ($result as $record) {
-    $users['latest_activity'][$record->uid] = $record;
+    $users['latest_activity'][$record->year] = $record;
   }
 
   return $users;
