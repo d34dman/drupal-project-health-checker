@@ -138,7 +138,6 @@ function projecthealth_form_submit($form, &$form_state) {
     $data['page'] = $page;
     $queue->createItem($data);
   }
-  $form_state['redirect'] = "projecthealth/view/{$project->field_project_machine_name}/$sid";
 }
 
 /**
