@@ -138,7 +138,6 @@ function projecthealth_form_submit($form, &$form_state) {
     $data['page'] = $page;
     $queue->createItem($data);
   }
-  $form_state['redirect'] = "projecthealth/view/{$project->field_project_machine_name}/$sid";
 }
 
 /**
@@ -643,9 +642,34 @@ function projecthealth_comment_create($sid, $pid, $issue, $comment) {
 }
 
 /**
- * Creates a project.
+ * Load a user.
+ */
+function _projecthealth_user_load($pid, $do_uid) {
+  $user = db_select('projecthealth_user', 'u')
+    ->fields('u')
+    ->condition('pid', $pid)
+    ->condition('uid', $do_uid)
+    ->execute()
+    ->fetchObject();
+  return $user;
+}
+
+/**
+ * Creates a user if required.
  */
 function projecthealth_user_create($pid, $do_uid, $latest_activity = 0, $maintainer = 0) {
+  // Check if user exists, update maintainer and lastest activity and bail out.
+  $result = _projecthealth_user_load($pid, $do_uid);
+  if ($result) {
+    if ($maintainer) {
+      db_update('projecthealth_user')
+        ->fields(array('maintainer' => $maintainer))
+        ->condition('uid', $do_uid)
+        ->condition('pid', $pid)
+        ->execute();
+    }
+    return $result->id;
+  }
   $user_id = NULL;
   $user = drupalorg_api_get_user($do_uid);
   if ($user) {
@@ -672,18 +696,12 @@ function projecthealth_user_create($pid, $do_uid, $latest_activity = 0, $maintai
  */
 function projecthealth_user_update($pid, $do_uid, $activity_time) {
   // Get latest activity.
-  $result = db_select('projecthealth_user', 'pu')
-    ->fields('pu')
-    ->condition('uid', $do_uid)
-    ->condition('pid', $pid)
-    ->execute()
-    ->fetchAssoc();
-
+  $result = _projecthealth_user_load($pid, $do_uid);
   if (empty($result)) {
     projecthealth_user_create($pid, $do_uid, $activity_time);
   }
   else {
-    $latest_activity = $result['latest_activity'];
+    $latest_activity = $result->latest_activity;
     if ($latest_activity < $activity_time) {
       $fields = array(
         'latest_activity' => $activity_time,
