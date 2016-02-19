@@ -178,7 +178,7 @@
 <script src="/sites/all/modules/development/projecthealth/js/datamaps.world.min.js"></script>
 <script>
 queue()
-    .defer(d3.json, "/projecthealth/data/{$project->name}/{$snapshot->id}")
+    .defer(d3.json, '<?php echo "/projecthealth/data/{$project->name}/{$snapshot->id}"; ?>')
     .await(ready);
 
 function ready(error, stats) {
