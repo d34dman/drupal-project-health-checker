@@ -342,6 +342,8 @@ function projecthealth_view_snapshot($project, $snapshot) {
     $snapshot_data = projecthealth_generate_report_data($project, $snapshot, $section['start'], $section['end'], $reset);
     $data[$key] = $snapshot_data;
   }
+  $data['project'] = $project;
+  $data['snapshot'] = $snapshot;
   return theme('projecthealth_snapshot', $data);
 }
 
