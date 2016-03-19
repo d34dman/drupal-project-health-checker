@@ -344,6 +344,7 @@ function projecthealth_view_snapshot($project, $snapshot) {
   }
   $data['project'] = $project;
   $data['snapshot'] = $snapshot;
+  $data['json_url'] = url("/projecthealth/data/{$project->name}/{$snapshot->id}.json", array('absolute' => TRUE));
   return theme('projecthealth_snapshot', $data);
 }
 
