@@ -1,0 +1,40 @@
+name = DC Asia 2016
+description = A Bootstrap theme.
+core = 7.x
+base theme = bootstrap
+
+;;;;;;;;;;;;;;;;;;;;;
+;; Regions
+;;;;;;;;;;;;;;;;;;;;;
+
+regions[navigation]     = 'Navigation'
+regions[header]         = 'Top Bar'
+regions[highlighted]    = 'Highlighted'
+regions[help]           = 'Help'
+regions[content]        = 'Content'
+regions[sidebar_first]  = 'Primary'
+regions[sidebar_second] = 'Secondary'
+regions[footer]         = 'Footer'
+regions[page_top]       = 'Page top'
+regions[page_bottom]    = 'Page bottom'
+
+
+;;;;;;;;;;;;;;;;;;;;;
+;; Stylesheets
+;;;;;;;;;;;;;;;;;;;;;
+
+stylesheets[all][] = fonts/font-awesome/css/font-awesome.min.css
+stylesheets[all][] = bootstrap/css/bootstrap.min.css
+stylesheets[all][] = css/AdminLTE.css
+stylesheets[all][] = css/custom.css
+
+
+;;;;;;;;;;;;;;;;;;;;;
+;; Scripts
+;;;;;;;;;;;;;;;;;;;;;
+
+scripts[] = 'js/dist/js/app.js'
+
+; Advanced
+; --------------
+settings[bootstrap_cdn] = 3.0.2

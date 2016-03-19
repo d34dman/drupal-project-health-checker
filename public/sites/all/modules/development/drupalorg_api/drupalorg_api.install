@@ -1,0 +1,14 @@
+<?php
+
+/**
+ * @file
+ * Drupal.org API module install file.
+ */
+
+/**
+ * Implements hook_schema().
+ */
+function drupalorg_api_schema() {
+  $schema['cache_drupalorg_api'] = drupal_get_schema_unprocessed('system', 'cache');
+  return $schema;
+}

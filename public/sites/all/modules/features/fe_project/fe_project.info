@@ -1,0 +1,14 @@
+name = fe project
+core = 7.x
+package = DC Asia 2016
+version = 7.x-1.0
+dependencies[] = features
+dependencies[] = number
+dependencies[] = text
+features[features_api][] = api:2
+features[field_base][] = body
+features[field_base][] = field_do_project_id
+features[field_instance][] = node-project-body
+features[field_instance][] = node-project-field_do_project_id
+features[node][] = project
+project path = sites/all/modules/features
