@@ -51,3 +51,23 @@ hosts:
       user: root
       pass: admin
 
+  prod:
+    host: 104.131.114.91
+    port: 22
+    user: root
+    branch: develop
+    rootFolder: /var/static/dcasia16projecthealth.d34dman.com
+    siteFolder: /public/sites/dcasia16projecthealth.d34dman.com
+    filesFolder: /public/sites/dcasia16projecthealth.d34dman.com/files
+    backupFolder: /var/backups/multibasebox/backups
+    tmpFolder: /var/backups/multibasebox/tmp
+    hasDrush: true
+    useForDevelopment: true
+    ignoreSubmodules: true
+    supportsBackups: true
+    supportsCopyFrom: true
+    supportsInstalls: true
+    database:
+      name: dcasia16projecthealth_p
+      user: dcasia16_user
+      pass: "2oYgVj3UDVqWjH"
