@@ -321,7 +321,7 @@ function projecthealth_view_snapshot($project, $snapshot) {
   drupal_set_title(check_plain($project->data->title));
   // Bail out early if snapshot is not complete.
   if ($snapshot->progress < 100) {
-    return theme('projecthealth_snapshot_incomplete', $snapshot);
+    return theme('projecthealth_snapshot_incomplete', array('snapshot' => $snapshot));
   }
 
   $sections = array(
