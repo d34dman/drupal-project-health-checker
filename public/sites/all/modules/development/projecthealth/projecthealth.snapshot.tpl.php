@@ -131,7 +131,7 @@
               <div class="icon">
                 <i class="fa fa-info"></i>
               </div>
-              <a href="http://d34dman.github.io/dcasia16-drupal-visualization/" class="small-box-footer">
+              <a href="/" class="small-box-footer">
                 <i class="fa fa-home"></i> Home
               </a>
             </div>
